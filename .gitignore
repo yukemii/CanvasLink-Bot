@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Compiled binary
+canvaslink.exe
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.out
