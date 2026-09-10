@@ -43,8 +43,8 @@ The hero and closing buttons automatically become **Open in Telegram**. With an 
 - `styles.css`: Palette, responsive layouts, typography, and CSS illustrations.
 - `script.js`: Three-mode preview and sample assignment actions.
 - `theme.js` / `theme.css`: Light/dark toggle, system preference detection, and coordinated dark surfaces. The chosen theme is saved locally and applied before styles load. If storage is blocked, the toggle still works for the current page.
-- `assets/favicon.svg`: CanvasLink mark.
-- `assets/social.png`: 1200 × 630 social preview for LinkedIn and other platforms.
+- `assets/logo.png`: Supplied CanvasLink logo, used in the header, footer, bot preview, and favicon.
+- `assets/social-logo.png`: 1200 × 630 social preview for LinkedIn and other platforms.
 - `config.js`: Public bot URL only. Never put tokens or private feed URLs here.
 
 If the repository is renamed or moved, update the GitHub links and absolute `og:url` / `og:image` values in `index.html`. After publication, share the Pages URL on LinkedIn. The social preview becomes available once the site is public.

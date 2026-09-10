@@ -51,7 +51,7 @@
   background: #824b3e;
   color: #fff;
 }
-[data-theme="dark"] :is(.brand-icon, .bot-avatar, .day.today > b, .primary) {
+[data-theme="dark"] :is(.day.today > b, .primary) {
   background: #bc472f;
   color: #fff;
 }

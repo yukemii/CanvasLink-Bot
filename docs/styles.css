@@ -69,17 +69,14 @@ summary:focus-visible {
   font-weight: 500;
 }
 .brand-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 34px;
-  color: var(--paper);
-  background: var(--coral);
-  border-radius: 9px;
-  margin-right: 9px;
-  font-size: 29px;
-  line-height: 1;
+  display: block;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  margin-right: 6px;
 }
+
 .beta {
   font-family: var(--font);
   font-size: 8px;
@@ -821,15 +818,13 @@ h3 {
   background: #fffefa;
 }
 .bot-avatar {
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--coral);
-  color: white;
-  font-size: 27px;
-  width: 39px;
-  height: 39px;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+  width: 44px;
+  height: 44px;
 }
+
 .chat-header strong {
   display: block;
   font-size: 13px;
@@ -1155,10 +1150,8 @@ footer .brand {
   font-size: 19px;
 }
 footer .brand-icon {
-  width: 26px;
-  height: 28px;
-  font-size: 23px;
-  border-radius: 7px;
+  width: 34px;
+  height: 34px;
 }
 footer > div > p {
   font-size: 10px;
