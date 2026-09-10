@@ -4,11 +4,11 @@ const modes = {
   auto: {
     title: "Set it. Let it sync.",
     description:
-      "New items sync silently to Google Calendar. No confirmation card, no extra tap. Ideal for the deadlines you always want to see.",
+      "New items sync silently to your chosen Google Calendar. No approval tap needed. Deadline reminders are configured separately and start one day before.",
     kicker: "AUTO MODE · BEHIND THE SCENES",
     detail: "Added automatically to Google Calendar.",
     result:
-      "Preview: Auto mode works silently. The bot does not send this card.",
+      "Preview: Auto does not send this sync card. Separate reminders still apply.",
   },
   active: {
     title: "A little nudge. The final say is yours.",
@@ -21,7 +21,7 @@ const modes = {
   ignore: {
     title: "Less noise. More focus.",
     description:
-      "Skip this course and assignment type entirely. No new calendar events or review cards for items you choose to ignore.",
+      "Skip this course and assignment type. No new calendar events, review cards, or reminders for ignored items.",
     kicker: "IGNORE MODE · BEHIND THE SCENES",
     detail: "Skipped. Nothing added to your calendar.",
     result: "Preview: Ignore mode does not send a Telegram card.",
@@ -88,3 +88,57 @@ if (
     link.append(arrow);
   });
 }
+
+// Sample-only planner: completion is shared between its reminder and agenda views.
+const plannerPreviewState = { done: false, snoozed: false };
+const plannerPreviewStatus = document.querySelector("#planner-preview-status");
+const previewDue = document.querySelector("#preview-due");
+const previewDone = document.querySelector("#preview-done");
+const previewSnooze = document.querySelector("#preview-snooze");
+const previewOffset = document.querySelector("#preview-offset");
+function renderPlannerPreview() {
+  const labels = {
+    hour: "Due in one hour",
+    day: "Due tomorrow · 17:00",
+    week: "Due in one week · 17:00",
+  };
+  previewDue.textContent = labels[previewOffset.value];
+  previewDone.textContent = plannerPreviewState.done
+    ? "Undo Done ↩"
+    : "Mark Done ✓";
+  previewDone.setAttribute("aria-pressed", String(plannerPreviewState.done));
+  previewSnooze.disabled = plannerPreviewState.done;
+  previewSnooze.textContent = plannerPreviewState.snoozed
+    ? "Snoozed for 1 hour ✓"
+    : "Snooze 1 hour";
+  document.querySelector("#preview-agenda-assignment").hidden =
+    plannerPreviewState.done;
+  plannerPreviewStatus.textContent = plannerPreviewState.done
+    ? "Done in CanvasLink. Reminders stop and this item leaves your outstanding agenda. Nothing is submitted to Canvas."
+    : plannerPreviewState.snoozed
+      ? "Snoozed for one hour in this preview. Real reminders also respect your quiet hours."
+      : `Reminder set to ${previewOffset.value === "hour" ? "one hour" : previewOffset.value === "week" ? "one week" : "one day"} before. Change or disable it anytime in Settings.`;
+}
+document.querySelectorAll("[data-planner-view]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const agenda = button.dataset.plannerView === "agenda";
+    document.querySelector("#reminder-preview").hidden = agenda;
+    document.querySelector("#agenda-preview").hidden = !agenda;
+    document
+      .querySelectorAll("[data-planner-view]")
+      .forEach((item) =>
+        item.setAttribute("aria-pressed", String(item === button)),
+      );
+  });
+});
+previewOffset.addEventListener("change", renderPlannerPreview);
+previewDone.addEventListener("click", () => {
+  plannerPreviewState.done = !plannerPreviewState.done;
+  plannerPreviewState.snoozed = false;
+  renderPlannerPreview();
+});
+previewSnooze.addEventListener("click", () => {
+  plannerPreviewState.snoozed = true;
+  renderPlannerPreview();
+});
+renderPlannerPreview();

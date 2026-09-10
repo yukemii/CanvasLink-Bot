@@ -125,7 +125,7 @@ func (w *Worker) Start(ctx context.Context) {
 	}
 
 	var loops sync.WaitGroup
-	loops.Add(2)
+	loops.Add(3)
 
 	go func() {
 		defer loops.Done()
@@ -153,6 +153,21 @@ func (w *Worker) Start(ctx context.Context) {
 				return
 			case <-jobTicker.C:
 				w.runCalendarJobs(ctx)
+			}
+		}
+	}()
+
+	go func() {
+		defer loops.Done()
+		w.runPlanner(ctx)
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				w.runPlanner(ctx)
 			}
 		}
 	}()
@@ -250,9 +265,10 @@ func (w *Worker) processCalendarJob(ctx context.Context, job store.CalendarJob) 
 			w.failCalendarJob(ctx, job, errors.New("create job has no due date"), true)
 			return
 		}
-		_, createdEventID, createErr := w.google.CreateEventForTelegramUser(
+		_, createdEventID, createErr := w.google.CreateEventInCalendar(
 			ctx,
 			job.TelegramUserID,
+			job.GoogleCalendarID,
 			job.SourceUID,
 			job.Title,
 			*job.DueAt,
@@ -284,9 +300,10 @@ func (w *Worker) processCalendarJob(ctx context.Context, job store.CalendarJob) 
 		if canvasGoogle.IsEventNotFound(updateErr) {
 			// A user may have manually removed the old event. Recreate it with
 			// the stable CanvasLink ID and update local tracking atomically.
-			_, createdEventID, createErr := w.google.CreateEventForTelegramUser(
+			_, createdEventID, createErr := w.google.CreateEventInCalendar(
 				ctx,
 				job.TelegramUserID,
+				job.GoogleCalendarID,
 				job.SourceUID,
 				job.Title,
 				*job.DueAt,
@@ -423,6 +440,9 @@ func calendarRetryDelay(jobID int64, attempts int) time.Duration {
 }
 
 func (w *Worker) sendCalendarJobFeedback(ctx context.Context, job store.CalendarJob) {
+	if err := w.store.RecordHealth(ctx, job.TelegramUserID, "Google Calendar", true, 1, ""); err != nil {
+		log.Printf("Google recovery: %v", err)
+	}
 	switch job.Action {
 	case store.CalendarActionDelete:
 		w.sendRemovedFeedback(ctx, job)
@@ -435,7 +455,7 @@ func (w *Worker) sendCalendarJobFeedback(ctx context.Context, job store.Calendar
 		if job.Action == store.CalendarActionCreate {
 			w.sendSyncedFeedback(ctx, job.TelegramUserID, event)
 		} else {
-			w.sendUpdatedFeedback(ctx, job.TelegramUserID, event)
+			// The planner sends the source change with old and new deadlines.
 		}
 	}
 }
@@ -473,13 +493,8 @@ func (w *Worker) notifyUnverifiedCalendarEvent(ctx context.Context, job store.Ca
 }
 
 func (w *Worker) notifyCalendarReconnect(ctx context.Context, userID int64) {
-	account, err := w.store.GetTelegramAccount(ctx, userID)
-	if err != nil || account == nil {
-		return
-	}
-	msg := tgbotapi.NewMessage(account.ChatID, "⚠️ Google Calendar authorization expired. Reconnect it with /connect_google; queued calendar changes will remain safe until then.")
-	if _, err := w.api.Send(msg); err != nil {
-		log.Printf("canvaslink calendar jobs: send reconnect warning user=%d failed: %v", userID, err)
+	if err := w.store.RecordHealth(ctx, userID, "Google Calendar", false, 1, "⚠️ Google Calendar needs reconnection. Use /connect_google. Telegram reminders and agendas still work, and I’ll retain queued calendar changes."); err != nil {
+		log.Printf("Google health: %v", err)
 	}
 }
 
@@ -532,9 +547,29 @@ func (w *Worker) syncFeed(ctx context.Context, feed store.Feed) {
 		}
 	}()
 
+	account, err := w.store.GetTelegramAccount(ctx, feed.UserID)
+	if err != nil || account == nil || account.OnboardingStatus != "" {
+		return
+	}
+	if connected, e := w.store.HasGoogleToken(ctx, feed.UserID); e == nil && connected && w.google.IsConfigured() {
+		checkErr := w.google.CheckConnection(ctx, feed.UserID)
+		threshold := 3
+		warning := "⚠️ Google Calendar has failed repeated connection checks. Telegram reminders continue. Check /connect_google; I’ll retry and notify you when it recovers."
+		if errors.Is(checkErr, canvasGoogle.ErrGoogleAuthorizationInvalid) {
+			threshold = 1
+			warning = "⚠️ Google Calendar authorization expired. Reconnect with /connect_google. Telegram reminders still work."
+		}
+		if err := w.store.RecordHealth(ctx, feed.UserID, "Google Calendar", checkErr == nil, threshold, warning); err != nil {
+			log.Printf("Google connection health: %v", err)
+		}
+	}
 	events, seeds, err := canvas.FetchAndDetectContext(ctx, feed.ICalURL)
 	if err != nil {
 		log.Printf("canvaslink sync: fetch failed user=%d err=%v", feed.UserID, err)
+		if healthErr := w.store.RecordHealth(ctx, feed.UserID, "Canvas", false, 3, "⚠️ I couldn’t read your Canvas feed on 3 consecutive checks. Your saved deadlines are still available, but may be outdated. Check your feed in /settings. I’ll keep retrying and tell you when it recovers."); healthErr != nil {
+			log.Printf("record Canvas health: %v", healthErr)
+		}
+
 		return
 	}
 
@@ -598,6 +633,14 @@ func (w *Worker) syncFeed(ctx context.Context, feed store.Feed) {
 		if _, alreadyAmbiguous := ambiguousUIDs[ev.UID]; !alreadyAmbiguous {
 			observedUIDs[ev.UID] = ev
 		}
+	}
+
+	if err := w.recordPlannerSnapshot(ctx, feed.UserID, observedUIDs); err != nil {
+		log.Printf("planner snapshot user=%d: %v", feed.UserID, err)
+		return
+	}
+	if err := w.store.RecordHealth(ctx, feed.UserID, "Canvas", true, 3, ""); err != nil {
+		log.Printf("Canvas health: %v", err)
 	}
 
 	for uid, ev := range observedUIDs {
@@ -757,6 +800,28 @@ func (w *Worker) syncFeed(ctx context.Context, feed store.Feed) {
 
 	w.handleMissingEvents(ctx, feed.UserID, observedUIDs, prevSynced, now, &notificationBudget)
 
+	if feed.LastSyncedAt == nil {
+		auto, review, ignored := 0, 0, 0
+		for _, ev := range currentUIDs {
+			mode, e := w.store.GetCourseTypeMode(ctx, feed.UserID, ev.Course, ev.Type)
+			if e != nil {
+				continue
+			}
+			switch mode {
+			case store.ModeIgnore:
+				ignored++
+			case store.ModeReview:
+				review++
+			default:
+				auto++
+			}
+		}
+		summary := fmt.Sprintf("✅ First feed check complete\n%d upcoming items: %d set to auto-sync, %d set to review, %d ignored.\nCalendar operations may still be queued; this is the feed result, not confirmation that every Google write has finished.\n\nOpen /upcoming to browse. Change any course/type in /settings. Reminders default to 1 day before; customize or disable them in Settings → Reminders.", len(currentUIDs), auto, review, ignored)
+		if err := w.store.QueueFirstPlannerSummary(ctx, feed.UserID, summary); err != nil {
+			log.Printf("first summary: %v", err)
+			return
+		}
+	}
 	if err := w.store.TouchFeedSync(ctx, feed.UserID); err != nil {
 		log.Printf("canvaslink sync: touch sync failed user=%d err=%v", feed.UserID, err)
 	}
@@ -1157,7 +1222,21 @@ func (w *Worker) enqueueCalendarSync(
 	}
 
 	action := store.CalendarActionCreate
-	calendarID := "primary"
+	calendarID := ""
+	if prev != nil && prev.GoogleEventID != "" && prev.GoogleCalendarID != "" {
+		calendarID = prev.GoogleCalendarID
+	} else {
+		calendarID, err = w.google.EnsureDestination(ctx, userID)
+		if err != nil {
+			if errors.Is(err, canvasGoogle.ErrGoogleAuthorizationInvalid) {
+				w.notifyCalendarReconnect(ctx, userID)
+			} else {
+				_ = w.store.RecordHealth(ctx, userID, "Google Calendar", false, 3, "⚠️ I couldn’t prepare your calendar after repeated attempts. Check /connect_google and calendar permissions. Telegram reminders still work; I’ll retry.")
+			}
+			log.Printf("prepare destination user=%d: %v", userID, err)
+			return
+		}
+	}
 	eventID, err := w.google.DeterministicEventID(userID, ev.UID)
 	if err != nil {
 		log.Printf("canvaslink sync: deterministic event ID failed user=%d err=%v", userID, err)

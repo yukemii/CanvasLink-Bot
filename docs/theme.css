@@ -44,7 +44,7 @@
   --peach-text: #ffc1a9;
   --peach-surface: #4b3028;
 }
-[data-theme="dark"] :is(button, a, summary):focus-visible {
+[data-theme="dark"] :is(button, a, select, summary):focus-visible {
   outline-color: #9bceba;
 }
 [data-theme="dark"] ::selection {

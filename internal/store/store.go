@@ -144,6 +144,7 @@ func (s *Store) InitSchema(ctx context.Context) error {
 		canvaslinkGoogleTokensTable,
 		canvaslinkCalendarJobsTable,
 		canvaslinkDestructiveConfirmationsTable,
+		plannerSchema,
 	}
 
 	for i, q := range statements {
@@ -568,6 +569,14 @@ func closeAdvisoryLockConnection(conn *sql.Conn, discard bool) error {
 func (s *Store) DisconnectCanvas(ctx context.Context, userID int64) error {
 	return s.withTx(ctx, func(tx *sql.Tx) error {
 		queries := []string{
+			`UPDATE canvaslink_preferences SET settings=jsonb_set(settings,'{first_summary}','false') WHERE telegram_user_id=$1`,
+			`DELETE FROM canvaslink_deliveries WHERE telegram_user_id=$1 AND kind='summary'`,
+			`DELETE FROM canvaslink_planner_inputs WHERE telegram_user_id=$1`,
+
+			`DELETE FROM canvaslink_tasks WHERE telegram_user_id=$1 AND NOT manual`,
+			`DELETE FROM canvaslink_connection_health WHERE telegram_user_id=$1 AND service='Canvas'`,
+			`DELETE FROM canvaslink_deliveries WHERE telegram_user_id=$1 AND kind='health'`,
+
 			`DELETE FROM canvaslink_course_type_settings WHERE telegram_user_id = $1`,
 			`DELETE FROM canvaslink_pending_actions WHERE telegram_user_id = $1`,
 			`UPDATE canvaslink_calendar_jobs
@@ -605,6 +614,12 @@ func (s *Store) DisconnectCanvas(ctx context.Context, userID int64) error {
 // the stored Google token. It does not revoke the grant at Google.
 func (s *Store) DisconnectGoogle(ctx context.Context, userID int64) error {
 	return s.withTx(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM canvaslink_connection_health WHERE telegram_user_id=$1 AND service='Google Calendar'`, userID); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM canvaslink_deliveries WHERE telegram_user_id=$1 AND dedupe_key LIKE 'health:Google Calendar:%'`, userID); err != nil {
+			return err
+		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM canvaslink_oauth_states WHERE telegram_user_id = $1`, userID); err != nil {
 			return err
 		}
@@ -1129,7 +1144,7 @@ func seedDefaultSettings(ctx context.Context, execer contextExecer, userID int64
 			ctx,
 			`
 			INSERT INTO canvaslink_course_type_settings (telegram_user_id, course_id, course_name, assignment_type, mode)
-			VALUES ($1, $2, $3, $4, $5)
+			VALUES ($1, $2, $3, $4, COALESCE((SELECT settings->>'default_mode' FROM canvaslink_preferences WHERE telegram_user_id=$1), $5))
 			ON CONFLICT (telegram_user_id, course_id, assignment_type)
 			DO UPDATE SET
 				course_name = EXCLUDED.course_name,
@@ -3736,6 +3751,9 @@ func (s *Store) SaveGoogleAuthorization(ctx context.Context, telegramUserID int6
 			telegramUserID,
 		)
 		if err := requireAffected(result, err); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE canvaslink_preferences SET settings=settings-'calendar_id'-'calendar_name' WHERE telegram_user_id=$1`, telegramUserID); err != nil {
 			return err
 		}
 		_, err = tx.ExecContext(

@@ -213,12 +213,21 @@ func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
+	if b.handlePlannerText(ctx, msg, userID, text) {
+		return
+	}
+
 	// Default fallback
-	b.reply(msg.Chat.ID, "Try /settings or /start to get started.")
+	b.reply(msg.Chat.ID, "Try /today or /upcoming to see your work, /settings to customize, or /help for commands. Send /start if you haven’t set up yet.")
 }
 
 func (b *Bot) handleCommand(ctx context.Context, msg *tgbotapi.Message, userID int64, command string) {
+	if b.handlePlannerCommand(ctx, msg, userID, command) {
+		return
+	}
 	switch command {
+	case "help":
+		b.reply(msg.Chat.ID, helpMessage())
 	case "start":
 		b.handleStart(ctx, msg, userID)
 	case "connect_google":
@@ -234,7 +243,7 @@ func (b *Bot) handleCommand(ctx context.Context, msg *tgbotapi.Message, userID i
 	case "reset":
 		b.handleReset(ctx, msg, userID)
 	default:
-		b.reply(msg.Chat.ID, "Unknown command. Try /start, /settings, /timezone, /disconnect_canvas, /disconnect_google, or /reset.")
+		b.reply(msg.Chat.ID, "Unknown command. Use /help for the full command list, or /start to begin setup.")
 	}
 }
 
@@ -288,7 +297,7 @@ func (b *Bot) handleStart(ctx context.Context, msg *tgbotapi.Message, userID int
 				return
 			}
 		}
-		b.reply(msg.Chat.ID, "Welcome back! Use /settings to configure your modules, or /connect_google to link Google Calendar.")
+		b.reply(msg.Chat.ID, returningMessage)
 		return
 	}
 
@@ -299,19 +308,7 @@ func (b *Bot) handleStart(ctx context.Context, msg *tgbotapi.Message, userID int
 		return
 	}
 
-	b.reply(msg.Chat.ID, `🎓 Welcome to CanvasLink!
-
-I'll send you notifications about upcoming assignments and can sync them to Google Calendar automatically!
-
-First, let's connect your Canvas account.
-
-📋 How to get your Canvas link:
-1. Log into Canvas
-2. Open the Calendar page
-3. Click the "Calendar Feed" button/link (usually on the right side)
-4. Copy the feed URL that appears
-
-Then just paste the link here and I'll take it from there!`)
+	b.reply(msg.Chat.ID, welcomeMessage)
 }
 
 // ---------------------------------------------------------------------------
@@ -346,8 +343,7 @@ func (b *Bot) handleOnboardingURL(
 		return
 	}
 	if len(seeds) == 0 {
-		b.reply(msg.Chat.ID, "I could read the calendar, but I could not find any recognizable modules in it. Please check that this is your Canvas Calendar Feed URL.")
-		return
+		b.reply(msg.Chat.ID, "✅ Your calendar feed is valid but has no recognizable modules yet. I’ll keep checking as your semester gets published.")
 	}
 
 	// The network fetch above can outlive a concurrent disconnect/reset on
@@ -387,6 +383,8 @@ func (b *Bot) handleOnboardingURL(
 
 	courseCount := uniqueCourseCount(events)
 	eventCount := upcomingEventCount(events)
+	zone, _ := b.store.GetUserTimezone(ctx, userID)
+	b.reply(msg.Chat.ID, onboardingPreview(events, zone, time.Now()))
 
 	if !b.oauthServer.IsConfigured() {
 		b.reply(msg.Chat.ID, fmt.Sprintf("✅ Canvas connected! I found %d modules with %d upcoming events.\n\nGoogle Calendar is not configured on this bot, so we'll continue with Telegram notifications.", courseCount, eventCount))
@@ -504,7 +502,7 @@ Let's set up your preferences now!`
 	}
 
 	b.reply(chatID, guide)
-	b.startCourseSetup(ctx, chatID, userID)
+	b.sendQuickSetup(ctx, chatID, userID, googleConnected)
 }
 
 func (b *Bot) startCourseSetup(ctx context.Context, chatID int64, userID int64) {
@@ -703,6 +701,11 @@ func (b *Bot) finishOnboarding(ctx context.Context, chatID int64, userID int64) 
 }
 
 func (b *Bot) sendOnboardingComplete(ctx context.Context, chatID int64, userID int64) {
+	prefs, err := b.store.PlannerPreferences(ctx, userID)
+	if err != nil {
+		prefs = store.DefaultPlannerPreferences()
+	}
+	reminderSummary := plannerReminderSummary(prefs)
 	// Get summary
 	courses, err := b.store.ListUserCourses(ctx, userID)
 	courseCount := len(courses)
@@ -718,9 +721,18 @@ Here's a summary:
 🚀 Auto mode: events go straight to your calendar
 🚫 Ignore mode: events are filtered out
 
-You can change these anytime with /settings.
+You can toggle any course or assignment type anytime in /settings.
 
-I'll keep checking for new events automatically.`, courseCount))
+⏰ %s
+Customize or disable reminders in Settings → Reminders. For all-day items, offsets count back from 09:00 on the due date.
+
+📋 Use /today, /week or /upcoming. Scheduled daily/weekly agendas are optional in Settings → Agendas.
+
+Google events go into a separate CanvasLink calendar by default; choose another in Settings → Calendar.
+
+I’ll send a first-check summary when your feed is processed.
+
+I'll keep checking for new events automatically. Use /help for commands and defaults.`, courseCount, reminderSummary))
 }
 
 // ---------------------------------------------------------------------------
@@ -1089,6 +1101,10 @@ func (b *Bot) handleCallback(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 		return
 	}
 	data := strings.TrimSpace(cq.Data)
+	if strings.HasPrefix(data, "pl|") {
+		b.handlePlannerCallback(ctx, cq, userID)
+		return
+	}
 
 	switch {
 	case data == CBPrefixOnboardGoogleYes:
@@ -1319,10 +1335,15 @@ func (b *Bot) handlePendingAction(ctx context.Context, cq *tgbotapi.CallbackQuer
 			b.answerCallback(cq.ID, "Could not queue calendar event")
 			return
 		}
+		destination, err := b.google.EnsureDestination(ctx, userID)
+		if err != nil {
+			b.answerCallback(cq.ID, "Reconnect Google to prepare your CanvasLink calendar")
+			return
+		}
 		_, err = b.store.QueuePendingCalendarAdd(ctx, store.PendingCalendarAddInput{
 			TelegramUserID:   userID,
 			PendingActionID:  pendingID,
-			GoogleCalendarID: "primary",
+			GoogleCalendarID: destination,
 			GoogleEventID:    eventID,
 			Description:      fmt.Sprintf("CanvasLink manual add\nCourse: %s\nType: %s", pending.CourseID, pending.AssignmentType),
 			MaxAttempts:      12,
@@ -1532,6 +1553,17 @@ func settingsMessage(chatID int64) tgbotapi.MessageConfig {
 func settingsKeyboard() *tgbotapi.InlineKeyboardMarkup {
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📋 Upcoming", "pl|list|upcoming|0|0"),
+			tgbotapi.NewInlineKeyboardButtonData("➕ Add task", "pl|input|add"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("⏰ Reminders", "pl|rem|0"),
+			tgbotapi.NewInlineKeyboardButtonData("🗓 Agendas", "pl|agenda"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🎨 Calendar", "pl|calendar"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("📚 Module Sync Modes", CBPrefixSettingsHub+"modules"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
@@ -1720,15 +1752,7 @@ func BuildSettingsMatrixMessage(courseID string, settings []store.CourseSetting)
 }
 
 func (b *Bot) registerCommands() error {
-	cmds := []tgbotapi.BotCommand{
-		{Command: "start", Description: "Start or restart onboarding"},
-		{Command: "settings", Description: "Open settings menu"},
-		{Command: "timezone", Description: "Show or change your timezone"},
-		{Command: "connect_google", Description: "Link Google Calendar"},
-		{Command: "disconnect_canvas", Description: "Remove Canvas connection"},
-		{Command: "disconnect_google", Description: "Remove Google connection"},
-		{Command: "reset", Description: "Reset all data and start over"},
-	}
+	cmds := botCommands()
 	cfg := tgbotapi.NewSetMyCommands(cmds...)
 	_, err := b.api.Request(cfg)
 	return err

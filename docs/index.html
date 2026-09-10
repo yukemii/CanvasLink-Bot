@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7f6f2" />
     <meta
       name="description"
-      content="Less deadline admin. More student life. CanvasLink connects Canvas LMS to Google Calendar, with simple controls in Telegram."
+      content="Canvas deadlines, personalized reminders, and your week at a glance in Telegram. Connect Google Calendar, mark work done, and plan around your life."
     />
     <meta property="og:type" content="website" />
     <meta
@@ -15,7 +15,7 @@
     />
     <meta
       property="og:description"
-      content="Canvas → Telegram → Google Calendar. A little bot for a less chaotic semester."
+      content="Deadline reminders, a Telegram planner, and optional Google Calendar sync. A little bot for a lighter semester."
     />
     <meta
       property="og:url"
@@ -112,8 +112,9 @@
             >
           </h1>
           <p class="hero-description">
-            Canvas has your deadlines. Google Calendar has your life. CanvasLink
-            brings them together, with a little help from Telegram.
+            Canvas has your deadlines. CanvasLink brings them into your
+            life—with reminders you control, your week at a glance in Telegram,
+            and optional Google Calendar sync.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#demo" data-bot-link
@@ -239,14 +240,14 @@
                 ><span class="new-date">Fri, 11:59 PM <b>✓</b></span>
               </div>
               <span class="update-tag"
-                >New deadline. Already on your calendar.</span
+                >See what moved. Keep your calendar in sync.</span
               >
             </div>
             <h3>Plans change. Your calendar follows.</h3>
             <p>
-              New deadlines get added. Changed ones get updated. CanvasLink
-              periodically checks your Canvas feed so you can skip the
-              copy-and-paste routine.
+              See the previous and new dates when a deadline changes. CanvasLink
+              periodically checks your feed, updates tracked calendar events,
+              and adjusts outstanding reminders.
             </p>
           </article>
           <article class="feature-card feature-control">
@@ -259,34 +260,66 @@
             <h3>Every course. Your call.</h3>
             <p>
               Auto-sync your exams, review each assignment, skip the extras.
-              Choose a mode for each course and assignment type.
+              Apply one default, then customize each course and assignment type.
+              Toggle any setting later. Reminder preferences are separate from
+              calendar sync modes.
             </p>
             <a class="text-link" href="#demo"
               >Find your sync style <span aria-hidden="true">↗</span></a
             >
           </article>
           <article class="feature-card compact">
-            <span class="feature-symbol" aria-hidden="true">↗</span>
-            <h3>A chat, not another dashboard.</h3>
+            <span class="feature-symbol" aria-hidden="true">◷</span>
+            <h3>A nudge, on your terms.</h3>
             <p>
-              Connect your feed, review new items, and change settings in a
-              private Telegram conversation.
+              Reminders start one day before. Choose an hour, a week, or
+              multiple offsets; override them by course and assignment type.
+              Quiet hours and Off are always an option.
             </p>
           </article>
           <article class="feature-card compact">
-            <span class="feature-symbol" aria-hidden="true">◷</span>
-            <h3>On your time.</h3>
+            <span class="feature-symbol" aria-hidden="true">☷</span>
+            <h3>Your week, at a glance.</h3>
             <p>
-              Set your display timezone. Timed deadlines and all-day events keep
-              their place in Google Calendar.
+              Browse today, the next seven days, or all upcoming work. Filter by
+              course, and opt into daily or weekly agendas at a time that suits
+              you.
+            </p>
+          </article>
+          <article class="feature-card compact">
+            <span class="feature-symbol" aria-hidden="true">✓</span>
+            <h3>Done means one less reminder.</h3>
+            <p>
+              Mark work Done, undo it, or snooze for an hour. Completion stays
+              in CanvasLink—it never submits work to Canvas or deletes a
+              calendar event.
+            </p>
+          </article>
+          <article class="feature-card compact">
+            <span class="feature-symbol" aria-hidden="true">＋</span>
+            <h3>Room for your own plans.</h3>
+            <p>
+              Add personal tasks in Telegram and give assignments an earlier
+              personal target. Your official Canvas deadline stays visible and
+              unchanged.
+            </p>
+          </article>
+          <article class="feature-card compact">
+            <span class="feature-symbol" aria-hidden="true">▦</span>
+            <h3>A calendar that feels like yours.</h3>
+            <p>
+              Google events start in a separate CanvasLink calendar. Choose
+              another calendar, course colors, and a title prefix. Timed and
+              all-day events are supported.
             </p>
           </article>
           <article class="feature-card compact">
             <span class="feature-symbol" aria-hidden="true">⌁</span>
-            <h3>A little care behind the scenes.</h3>
+            <h3>Know when something needs you.</h3>
             <p>
-              Encrypted feed URLs and Google credentials. Retried calendar
-              operations. Careful removal checks for missing events.
+              Get alerts for repeated connection failures and recovery, with a
+              reconnection prompt when Google authorization expires. Upcoming
+              lists show the last successful Canvas check.
             </p>
           </article>
         </div>
@@ -303,6 +336,8 @@
             <p>
               Try the three sync modes with a sample assignment. In the bot, you
               can mix and match them across your courses and assignment types.
+              These controls govern calendar syncing; reminders have their own
+              settings.
             </p>
             <div
               class="mode-selector"
@@ -388,6 +423,94 @@
           </div>
         </div>
       </section>
+      <section class="section wrap planner-preview" id="planner-preview">
+        <div class="planner-preview-copy">
+          <p class="eyebrow">A LITTLE NUDGE. A CLEARER WEEK.</p>
+          <h2>Your next deadline.<br />Already on your radar.</h2>
+          <p>
+            Start with a reminder one day before, then make it yours. Mark a
+            task Done and it leaves your outstanding agenda. Snooze when you
+            need a little more time.
+          </p>
+          <p>
+            Try it here, then find the real controls in <code>/settings</code>.
+            Quiet hours start at 22:00–08:00; scheduled agendas are optional.
+          </p>
+          <a class="text-link" href="#how-it-works"
+            >Get set up <span aria-hidden="true">↓</span></a
+          >
+        </div>
+        <div class="planner-sample">
+          <div class="planner-sample-header">
+            <img src="assets/logo.png" alt="" width="38" height="38" />
+            <div>
+              <strong>CanvasLink</strong
+              ><span>Interactive preview · sample data</span>
+            </div>
+          </div>
+          <div
+            class="planner-preview-switch"
+            role="group"
+            aria-label="Choose a planner preview"
+          >
+            <button
+              type="button"
+              data-planner-view="reminder"
+              aria-pressed="true"
+            >
+              Reminder</button
+            ><button
+              type="button"
+              data-planner-view="agenda"
+              aria-pressed="false"
+            >
+              Daily agenda
+            </button>
+          </div>
+          <div id="reminder-preview">
+            <label class="preview-offset-label" for="preview-offset"
+              >Remind me before the deadline</label
+            ><select id="preview-offset">
+              <option value="hour">1 hour before</option>
+              <option value="day" selected>1 day before · default</option>
+              <option value="week">1 week before</option>
+            </select>
+            <div class="planner-task-preview">
+              <span class="message-kicker">CS2040 · ASSIGNMENT</span>
+              <h3>Problem Set 04</h3>
+              <p id="preview-due">Due tomorrow · 17:00</p>
+            </div>
+            <div class="planner-task-actions">
+              <button type="button" id="preview-done">Mark Done ✓</button
+              ><button type="button" id="preview-snooze">Snooze 1 hour</button>
+            </div>
+          </div>
+          <div id="agenda-preview" hidden>
+            <p class="message-kicker">A SAMPLE DAY · YOUR LOCAL TIME</p>
+            <h3>Your daily agenda</h3>
+            <p class="preview-agenda-note">
+              Scheduled agendas are off until you enable them.
+            </p>
+            <ul class="preview-agenda-list">
+              <li>
+                <span>Economics quiz <small>EC1101E</small></span
+                ><strong>15:00</strong>
+              </li>
+              <li id="preview-agenda-assignment">
+                <span>Problem Set 04 <small>CS2040</small></span
+                ><strong>17:00</strong>
+              </li>
+            </ul>
+          </div>
+          <p id="planner-preview-status" role="status" aria-live="polite">
+            One day before by default. You’re in control.
+          </p>
+          <p class="preview-sample-note">
+            Demo only. No messages are sent and no accounts are changed.
+            Reminder and agenda samples show different example days.
+          </p>
+        </div>
+      </section>
       <section class="section wrap" id="how-it-works">
         <div class="section-heading">
           <div>
@@ -408,16 +531,19 @@
             <h3>Bring your Canvas feed.</h3>
             <p>
               Open Calendar in Canvas, copy your Calendar Feed link, and send it
-              to the bot after <code>/start</code>.
+              to the bot after <code>/start</code>. Preview the detected courses
+              and items before choosing your preferences—even an empty feed is
+              welcome.
             </p>
             <span class="step-caption">Canvas → Calendar → Calendar Feed</span>
           </article>
           <article>
             <span class="step-number">02</span>
-            <h3>Connect Google Calendar.</h3>
+            <h3>Link Google, if you like.</h3>
             <p>
-              Use the bot’s authorization button to link your Google account. Or
-              skip it and use Telegram review notifications.
+              Use the authorization button to link Google and sync into a
+              dedicated CanvasLink calendar. Or skip Google and use Telegram
+              reminders, agendas, and personal tasks.
             </p>
             <span class="step-caption"
               >Your Google password stays with Google</span
@@ -427,10 +553,14 @@
             <span class="step-number">03</span>
             <h3>Set your sync style.</h3>
             <p>
-              Choose Auto, Active, or Ignore for your courses and assignment
-              types. Revisit <code>/settings</code> whenever plans change.
+              Choose one default mode or customize individual types. Reminders
+              begin one day before. Toggle any mode or notification preference
+              anytime in <code>/settings</code>; <code>/help</code> explains
+              every command.
             </p>
-            <span class="step-caption">A semester that works your way</span>
+            <span class="step-caption"
+              >Your defaults are always yours to change</span
+            >
           </article>
         </div>
       </section>
@@ -522,9 +652,70 @@
               >
             </summary>
             <p>
-              No. Google Calendar is optional. You can still use Telegram review
-              notifications without linking Google. To add events to Google
-              Calendar, connect your account using <code>/connect_google</code>.
+              No. Reminders, agendas, upcoming lists, and personal tasks work in
+              Telegram without Google. Connect using
+              <code>/connect_google</code> to sync Canvas events into a separate
+              CanvasLink calendar. Personal tasks stay in Telegram.
+            </p>
+          </details>
+          <details>
+            <summary>
+              When will I receive reminders?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              Reminders are enabled one day before by default. Choose up to five
+              offsets (from one minute to 30 days), turn them off, or override
+              them per course and assignment type in <code>/reminders</code>.
+              They also cover non-ignored items awaiting calendar approval.
+              Quiet hours default to 22:00–08:00 in your timezone. Whole-day
+              offsets for all-day events arrive at 09:00 on the reminder day.
+              Delivery is checked every minute while the bot is running.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Are daily and weekly agendas automatic?<span aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              Scheduled agendas start off. Enable them in
+              <code>/agenda</code> and choose a local delivery time; the initial
+              choices are daily at 08:00 and weekly on Sunday at 18:00. Quiet
+              hours apply. You can always use <code>/today</code>,
+              <code>/week</code>, or <code>/upcoming</code> after setup without
+              enabling scheduled messages.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Does marking Done submit my assignment?<span aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              No. Done only tracks completion inside CanvasLink and stops its
+              reminders. Undo restores future reminders. It does not submit
+              anything to Canvas or remove a Google event. A personal target
+              changes reminder timing while preserving the official deadline; if
+              Canvas moves the deadline before your target, reminders fall back
+              to the official deadline.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Can I change the calendar or course settings later?<span
+                aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              Yes—open <code>/settings</code> anytime. Choose sync modes,
+              reminder offsets, agenda times, timezone, calendar destination,
+              colors, and course title prefixes. A destination change affects
+              newly tracked events; existing events stay in their recorded
+              calendar. Colors and title preferences apply on the next create or
+              update.
             </p>
           </details>
           <details>
@@ -532,11 +723,12 @@
               What happens if I disconnect?<span aria-hidden="true">+</span>
             </summary>
             <p>
-              Disconnecting Canvas removes your feed and course settings but
-              keeps existing calendar events. Disconnecting Google removes the
-              saved authorization and also keeps your events. A separate,
-              confirmed <code>/reset</code> can remove verified CanvasLink-owned
-              events before deleting local data.
+              Disconnecting Canvas removes feed-backed planner items and course
+              settings while retaining Google events, personal tasks, and
+              notification preferences. Disconnecting Google removes its
+              authorization but keeps events and the Telegram planner. A
+              separate, confirmed <code>/reset</code> removes verified
+              CanvasLink-owned events before deleting local data.
             </p>
           </details>
           <details>

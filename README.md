@@ -1,13 +1,14 @@
 # CanvasLink
 
-CanvasLink is a standalone Telegram bot that syncs Canvas LMS iCal feeds to Google Calendar.
+CanvasLink is a standalone Telegram bot for Canvas deadlines, personalized reminders, daily/weekly agendas, and optional Google Calendar sync.
 
 It was extracted from the [Dulie](https://github.com/markadodo/dulie) scheduling assistant codebase into its own independent project. CanvasLink is now fully self-contained with its own Google OAuth flow, database tables, and no runtime dependencies on Dulie.
 
 ## Landing page
 
 The student-facing landing page lives in [`docs/`](docs/README.md). It includes an
-interactive sync-mode preview, responsive layouts, and social sharing metadata.
+interactive sync-mode and reminder/agenda previews, light/dark themes, responsive
+layouts, and social sharing metadata.
 Preview it with `python3 -m http.server 4173 --directory docs`, then open
 http://localhost:4173. See the [site guide](docs/README.md) for GitHub Pages
 deployment and live Telegram button configuration.
@@ -41,6 +42,12 @@ deployment and live Telegram button configuration.
 ```
 
 ## Features
+
+- **Personalized Reminders**: Enabled one day before by default, with custom offsets, course/type overrides, quiet hours, and snoozing
+- **Telegram Planner**: Today, next-seven-days, and paginated upcoming views with course filters, completion/undo, personal tasks, and personal targets
+- **Scheduled Agendas**: Optional daily and weekly summaries at user-selected local times
+- **Passive Connection Alerts**: Repeated-failure and recovery notices, plus before/after deadline-change messages
+- **Dedicated Calendar**: Default CanvasLink calendar, writable-calendar selection, course colors, and optional course title prefixes
 
 - **Canvas iCal Feed Parsing**: Fetches and parses Canvas LMS iCal feeds to detect courses, assignments, quizzes, and exams
 - **Guided Onboarding**: Connect a Canvas feed, optionally link Google Calendar, and configure each module
@@ -101,7 +108,7 @@ All CanvasLink tables use the `canvaslink_` prefix and are auto-created on start
 - Go 1.25+
 - PostgreSQL database
 - Telegram Bot Token (from [@BotFather](https://t.me/botfather))
-- Google Cloud project with Calendar API enabled
+- Google Cloud project with Calendar API enabled (optional, for calendar sync)
 
 ### Google Cloud Console Setup
 
@@ -146,12 +153,21 @@ go build -o canvaslink .
 | Command | Description |
 |---------|-------------|
 | `/start` | Start or resume guided onboarding |
+| `/help` | Full command guide, defaults, and feature explanations |
 | `/connect_google` | Link Google Calendar using an inline authorization button |
-| `/settings` | Open settings UI to configure sync modes |
+| `/settings` | Configure sync modes, reminders, agendas, and calendar preferences |
+| `/today` | Show today's outstanding work |
+| `/week` | Show the next seven days |
+| `/upcoming` | Browse upcoming work, filter by course, and open task actions |
+| `/completed` | Browse completed items and undo completion |
+| `/add` | Create a personal task in Telegram |
+| `/reminders` | Set reminder offsets, course/type overrides, and quiet hours |
+| `/agenda` | Enable or configure daily/weekly summaries |
 | `/timezone` | Show or change the timezone used in Telegram messages |
-| `/disconnect_canvas` | Remove the Canvas feed and settings while retaining calendar events |
+| `/disconnect_canvas` | Remove the feed and course settings; keep Google events, personal tasks, and notification preferences |
 | `/disconnect_google` | Remove the Google authorization while retaining calendar events |
 | `/reset` | Verified wipe of CanvasLink-owned events, followed by deletion of local data |
+| `/cancel` | Cancel pending planner text input |
 
 ## Sync Modes
 
@@ -248,3 +264,138 @@ the included CI workflow runs these tests automatically.
 ## License
 
 [MIT](LICENSE)
+
+## Student planner and reminders
+
+The bot now includes a Telegram planner alongside Google Calendar syncing:
+
+| Command | What it does |
+|---|---|
+| `/today` | Today's outstanding items in the student's timezone |
+| `/week` | Outstanding items in the next seven local calendar days |
+| `/upcoming` | Paginated list with course filters and item actions |
+| `/completed` | Completed items, with an undo action |
+| `/add` | Create a personal task with a due date |
+| `/reminders` | Reminder defaults, course/type overrides, and quiet hours |
+| `/agenda` | Configure scheduled daily and weekly summaries |
+| `/cancel` | Cancel an in-progress text entry |
+
+All these features are also accessible from `/settings`.
+
+### Reminder behavior
+
+- **Enabled by default, one day before.** Reminders are independent of Google
+  Calendar approval and apply to non-ignored feed items and personal tasks.
+- Choose presets (one hour, one day, one week), `off`, or up to five custom
+  offsets such as `1h, 1d, 1w`. Supported units are minutes, hours, days, and weeks,
+  with a maximum offset of 30 days.
+- Override the default per course, then per assignment type. Explicit **Off**
+  overrides inherited reminders; **Use inherited default** removes an override.
+- Quiet hours default to **22:00–08:00** in the user's timezone. Reminders and
+  agendas wait until quiet hours end. Connection health alerts bypass quiet hours.
+  Equal start/end hours disable quiet hours.
+- Timed reminders use elapsed offsets. All-day offsets count back from 09:00 on
+  the local due date; whole-day offsets preserve that wall time across DST changes.
+- The scheduler runs every minute. After downtime or late discovery, only the
+  most recently elapsed offset is caught up, and only before the target/deadline.
+  It does not send a burst for every missed offset.
+- **Done** is local to CanvasLink, stops reminders, and can be undone. It does not
+  submit anything to Canvas or delete a Google event. **Snooze 1h** schedules one
+  follow-up and then resumes future offsets.
+- A personal target replaces the reminder reference time while leaving the
+  official deadline unchanged. If a Canvas change moves the official deadline
+  before the target, reminders fall back to the official deadline.
+- Missing, cancelled, ambiguously duplicated, and ignored items do not receive
+  reminders. Missing items remain stored; this does not bypass the existing
+  safety checks for deleting Google events.
+
+### Agendas, tasks, and onboarding
+
+Scheduled agendas are **off by default**. Students can enable daily summaries
+(default 08:00) and weekly summaries (default Sunday 18:00), and configure their
+own times. `/today` and `/week` always work. Digests omit done/ignored items and
+include the last successful Canvas check where available.
+
+Personal tasks use `YYYY-MM-DD HH:MM | title` during `/add`, interpreted in the
+student's timezone. Tasks support completion, snoozing, editing their due date,
+setting/clearing a personal target, and deletion. Personal tasks live in Telegram;
+they are not automatically synced to Google Calendar.
+
+Onboarding accepts valid empty feeds, previews upcoming work when available, and
+lets students apply one default to all courses or customize individual types.
+New courses inherit the selected default. Setup explicitly explains that every
+course/type and reminder setting can be changed later. A successful first feed
+check queues a summary; its counts describe sync preferences, not confirmation
+that all pending Google operations have completed.
+
+### Passive connection health
+
+Canvas produces one warning after three consecutive failed reads, followed by a
+recovery notice when checks succeed. Google is checked during feed sync even
+when no assignments changed. Invalid authorization produces a reconnect prompt;
+other repeated connection failures use the same three-check threshold. These
+checks are periodic, not instantaneous. An intentionally disconnected account
+does not keep receiving pending connection warnings. A bot/server outage itself
+requires separate external uptime monitoring.
+
+### Dedicated Google Calendar
+
+New events default to a separate **CanvasLink** calendar, created lazily on the
+first calendar sync (or using **Use dedicated CanvasLink calendar** in settings).
+Students can choose another writable calendar, toggle a course prefix in event
+titles, and choose per-course event colors. Appearance changes apply on the next
+create/update. Destination changes affect newly tracked events; existing events
+and durable retries remain pinned to their recorded calendar.
+
+The Google authorization flow now requests these scopes:
+
+- `https://www.googleapis.com/auth/calendar.events`
+- `https://www.googleapis.com/auth/calendar.calendars`
+- `https://www.googleapis.com/auth/calendar.calendarlist.readonly`
+
+Existing test accounts should reconnect with `/connect_google` to grant the
+additional calendar creation/list permissions. Configure these permissions in
+your Google OAuth consent setup before rolling the bot out. Existing credentials
+and environment-variable names are unchanged.
+
+### Persistence and delivery guarantees
+
+Startup creates the planner preferences, tasks, deliveries, connection-health,
+and expiring-input tables automatically. Notifications use a durable outbox
+with unique logical keys; user locks serialize scheduling, settings, reset, and
+send attempts. Transient send failures retry after five minutes, and deliveries
+are rechecked against current task state/settings before sending. Old expired
+outbox records are pruned after 30 days.
+
+Telegram's send API does not provide an idempotency key. If Telegram accepts a
+message but the response or subsequent database acknowledgement is lost, a retry
+can repeat it. Normal scheduler ticks and process restarts after acknowledgement
+do not duplicate deliveries. Google event writes retain their existing
+idempotency and ownership protections.
+
+Disconnecting Canvas removes feed-backed planner items while retaining personal
+tasks and preferences. A full reset removes all planner data, including pending
+reminders and text-entry state, after the existing verified Google wipe flow.
+
+### Before releasing the planner
+
+Automated tests cover PostgreSQL persistence, reminder delivery, and mocked
+Google/Telegram requests. A real account smoke test is still required before
+promoting this release to `main`:
+
+1. Run the development branch with a separate test bot token and test database.
+   Stop it before switching that token back to another instance; do not run two
+   Telegram polling instances with the same token.
+2. Configure the Google consent permissions listed above and reconnect a test
+   account. Confirm that a dedicated CanvasLink calendar is created, a test event
+   is added, and a changed deadline updates that same event.
+3. Check `/start`, `/help`, course settings, and `/upcoming` with a test Canvas
+   feed. Use a near-future personal task and a one-minute offset to verify an
+   actual reminder; check Done/Undo, quiet hours, and a scheduled agenda too.
+4. Restart the test instance and confirm preferences survive and acknowledged
+   notifications are not repeated. Disconnect/reconnect Google and confirm the
+   recovery path works.
+5. Deploy the tested backend before publishing the matching landing-page claims.
+   Pushing `docs/` to `main` publishes the site through GitHub Pages; it does not
+   deploy the Go bot. Preserve a database backup before upgrading an existing
+   instance.

@@ -424,6 +424,10 @@ func TestPostgresSafetyLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enqueue exact-state delete: %v", err)
 	}
+	// Fast local databases may reach the claim before the 1ms grace elapses.
+	if _, err := primary.db.ExecContext(ctx, `SELECT pg_sleep(GREATEST(0, EXTRACT(EPOCH FROM ($1::timestamptz - clock_timestamp()))))`, deleteNotBefore); err != nil {
+		t.Fatalf("wait for exact-state deletion threshold: %v", err)
+	}
 	claimed, err = primary.ClaimCalendarJobs(ctx, "integration-delete-worker", 10, time.Minute)
 	if err != nil {
 		t.Fatalf("claim exact-state delete: %v", err)

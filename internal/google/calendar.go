@@ -84,6 +84,15 @@ func (c *CalendarClient) DeterministicEventID(telegramUserID int64, canvasUID st
 // a Canvas event. The deterministic event ID makes retries idempotent, including
 // retries after a process exits between creating the event and recording it.
 func (c *CalendarClient) CreateEventForTelegramUser(ctx context.Context, telegramUserID int64, canvasUID, title string, dueAt time.Time, allDay bool, description string) (string, string, error) {
+	destination, err := c.EnsureDestination(ctx, telegramUserID)
+	if err != nil {
+		return "", "", err
+	}
+	return c.CreateEventInCalendar(ctx, telegramUserID, destination, canvasUID, title, dueAt, allDay, description)
+}
+
+// CreateEventInCalendar pins retries to the destination saved in the durable job.
+func (c *CalendarClient) CreateEventInCalendar(ctx context.Context, telegramUserID int64, destination, canvasUID, title string, dueAt time.Time, allDay bool, description string) (string, string, error) {
 	eventID, err := DeterministicEventID(c.instanceID, telegramUserID, canvasUID)
 	if err != nil {
 		return "", "", err
@@ -97,21 +106,25 @@ func (c *CalendarClient) CreateEventForTelegramUser(ctx context.Context, telegra
 		return "", "", err
 	}
 
-	event := calendarEvent(c.instanceID, canvasUID, title, dueAt, allDay, description)
+	event, err := c.styledEvent(ctx, telegramUserID, canvasUID, title, calendarEvent(c.instanceID, canvasUID, title, dueAt, allDay, description), description)
+	if err != nil {
+		return "", "", err
+	}
 	event.Id = eventID
-	created, err := service.Events.Insert("primary", event).Context(opCtx).Do()
+	created, err := service.Events.Insert(destination, event).Context(opCtx).Do()
 	if isGoogleAPIStatus(err, 409) {
-		existing, inspectErr := inspectOwnedEvent(opCtx, service, "primary", eventID, c.instanceID, canvasUID)
+		existing, inspectErr := inspectOwnedEvent(opCtx, service, destination, eventID, c.instanceID, canvasUID)
 		if inspectErr != nil {
 			return "", "", inspectErr
 		}
 		if strings.TrimSpace(existing.Etag) == "" {
 			return "", "", ErrEventOwnershipUnverified
 		}
+		event.Id = "" // ID belongs in the URL, not in a patch body.
 		updateCall := service.Events.Patch(
-			"primary",
+			destination,
 			eventID,
-			calendarEvent(c.instanceID, canvasUID, title, dueAt, allDay, description),
+			event,
 		).Context(opCtx)
 		updateCall.Header().Set("If-Match", existing.Etag)
 		updated, updateErr := updateCall.Do()
@@ -121,7 +134,7 @@ func (c *CalendarClient) CreateEventForTelegramUser(ctx context.Context, telegra
 		if updated == nil || updated.Id != eventID || !isOwnedEvent(updated, c.instanceID, canvasUID) {
 			return "", "", ErrEventOwnershipUnverified
 		}
-		return "primary", eventID, nil
+		return destination, eventID, nil
 	}
 	if err != nil {
 		return "", "", wrapEventOperationError("create google calendar event", err)
@@ -129,7 +142,7 @@ func (c *CalendarClient) CreateEventForTelegramUser(ctx context.Context, telegra
 	if created == nil || created.Id != eventID || !isOwnedEvent(created, c.instanceID, canvasUID) {
 		return "", "", ErrEventOwnershipUnverified
 	}
-	return "primary", eventID, nil
+	return destination, eventID, nil
 }
 
 // UpdateEvent updates a previously created CanvasLink event.
@@ -162,10 +175,14 @@ func (c *CalendarClient) UpdateEvent(ctx context.Context, telegramUserID int64, 
 	if strings.TrimSpace(existing.Etag) == "" {
 		return ErrEventOwnershipUnverified
 	}
+	event, err := c.styledEvent(ctx, telegramUserID, canvasUID, title, calendarEvent(c.instanceID, canvasUID, title, dueAt, allDay, description), description)
+	if err != nil {
+		return err
+	}
 	updateCall := service.Events.Patch(
 		calendarID,
 		eventID,
-		calendarEvent(c.instanceID, canvasUID, title, dueAt, allDay, description),
+		event,
 	).Context(opCtx)
 	updateCall.Header().Set("If-Match", existing.Etag)
 	updated, err := updateCall.Do()

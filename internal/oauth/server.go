@@ -65,7 +65,7 @@ func NewServer(db *store.Store, clientID, clientSecret, redirectURL string) *Ser
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RedirectURL:  redirectURL,
-			Scopes:       []string{googlecalendar.CalendarEventsScope},
+			Scopes:       []string{googlecalendar.CalendarEventsScope, googlecalendar.CalendarCalendarsScope, googlecalendar.CalendarCalendarlistReadonlyScope},
 			Endpoint:     google.Endpoint,
 		},
 		configured: true,
