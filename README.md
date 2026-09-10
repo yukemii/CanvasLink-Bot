@@ -4,6 +4,14 @@ CanvasLink is a standalone Telegram bot that syncs Canvas LMS iCal feeds to Goog
 
 It was extracted from the [Dulie](https://github.com/markadodo/dulie) scheduling assistant codebase into its own independent project. CanvasLink is now fully self-contained with its own Google OAuth flow, database tables, and no runtime dependencies on Dulie.
 
+## Landing page
+
+The student-facing landing page lives in [`docs/`](docs/README.md). It includes an
+interactive sync-mode preview, responsive layouts, and social sharing metadata.
+Preview it with `python3 -m http.server 4173 --directory docs`, then open
+http://localhost:4173. See the [site guide](docs/README.md) for GitHub Pages
+deployment and live Telegram button configuration.
+
 ## Architecture
 
 ```
