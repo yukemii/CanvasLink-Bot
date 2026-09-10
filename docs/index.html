@@ -28,7 +28,9 @@
     <meta name="twitter:card" content="summary_large_image" />
     <title>CanvasLink — Your deadlines, connected.</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="theme.css" />
     <script src="config.js" defer></script>
     <script src="script.js" defer></script>
   </head>
@@ -51,6 +53,46 @@
           rel="noopener noreferrer"
           >GitHub <span aria-hidden="true">↗</span></a
         >
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="Dark mode"
+          aria-pressed="false"
+          title="Switch to dark mode"
+          hidden
+        >
+          <svg
+            class="theme-moon"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20.8 13.1A9 9 0 0 1 10.9 3.2 9 9 0 1 0 20.8 13.1Z" />
+          </svg>
+          <svg
+            class="theme-sun"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+            />
+          </svg>
+        </button>
       </nav>
     </header>
     <main id="main">

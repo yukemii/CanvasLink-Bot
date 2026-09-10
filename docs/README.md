@@ -42,10 +42,11 @@ The hero and closing buttons automatically become **Open in Telegram**. With an 
 - `index.html`: Copy, feature descriptions, setup guide, FAQ, and sharing metadata.
 - `styles.css`: Palette, responsive layouts, typography, and CSS illustrations.
 - `script.js`: Three-mode preview and sample assignment actions.
+- `theme.js` / `theme.css`: Light/dark toggle, system preference detection, and coordinated dark surfaces. The chosen theme is saved locally and applied before styles load. If storage is blocked, the toggle still works for the current page.
 - `assets/favicon.svg`: CanvasLink mark.
 - `assets/social.png`: 1200 × 630 social preview for LinkedIn and other platforms.
 - `config.js`: Public bot URL only. Never put tokens or private feed URLs here.
 
 If the repository is renamed or moved, update the GitHub links and absolute `og:url` / `og:image` values in `index.html`. After publication, share the Pages URL on LinkedIn. The social preview becomes available once the site is public.
 
-The site supports keyboard navigation, visible focus indicators, native expandable FAQs, screen-reader status announcements, and reduced-motion preferences. No analytics, cookies, or tracking scripts are included.
+The site supports keyboard navigation, visible focus indicators, native expandable FAQs, screen-reader status announcements, and reduced-motion preferences. The theme preference is stored locally in your browser. No analytics, cookies, or tracking scripts are included.
