@@ -13,6 +13,27 @@ Preview it with `python3 -m http.server 4173 --directory docs`, then open
 http://localhost:4173. See the [site guide](docs/README.md) for GitHub Pages
 deployment and live Telegram button configuration.
 
+## Privacy and production website
+
+**Pre-launch:** the bot has been started locally for testing but has not been
+deployed to an always-on host. The published website uses sample-demo
+buttons, and the policy pages are pre-launch drafts. Finalize production hosting
+and retention details before publishing them as the live service policies.
+
+CanvasLink has dedicated [Privacy Policy](docs/privacy/index.html) and
+[Terms of Service](docs/terms/index.html) pages, linked from the website footer, bot welcome/help messages, and Google
+authorization prompt.
+They identify Ke Mi as the operator and dulie.business@gmail.com as the support
+and privacy contact. Self-hosted operators must provide their own accurate
+policies and contact details, including the policy URL constants in
+`internal/bot/help.go`.
+
+See [domain and Google verification setup](docs/domain-setup.md) to reuse
+`dulie.app` without purchasing another domain. Configure CanvasLink's own OAuth
+branding with its actual homepage, privacy, and terms URLs; do not overwrite
+Dulie's OAuth app. Website publication and bot deployment are separate. Confirm
+production providers, retention, and deletion handling before release.
+
 ## Architecture
 
 ```
@@ -207,6 +228,15 @@ wipe if needed.
 
 ## Production Security
 
+See [current launch status and local runner](deploy/launch-status.md) for the
+$0-additional-hosting pilot setup, container preparation, and remaining inputs.
+The [Google verification guide](deploy/google-verification.md) contains exact
+consent-screen links, scopes, and demonstration steps.
+
+For a separate CanvasLink database on Dulie’s existing PostgreSQL server, see
+[the database setup runbook](deploy/database-setup.md). It includes read-only
+preflight checks and provisioning steps; no repository merge is required.
+
 - Use an HTTPS `CANVASLINK_OAUTH_REDIRECT_URL` in production. Plain HTTP is
   accepted only for localhost or loopback development callbacks.
 - On a single host, set `CANVASLINK_OAUTH_LISTEN_ADDR=127.0.0.1:9090` and place
@@ -350,8 +380,13 @@ and durable retries remain pinned to their recorded calendar.
 The Google authorization flow now requests these scopes:
 
 - `https://www.googleapis.com/auth/calendar.events`
-- `https://www.googleapis.com/auth/calendar.calendars`
+- `https://www.googleapis.com/auth/calendar.app.created`
 - `https://www.googleapis.com/auth/calendar.calendarlist.readonly`
+
+Calendar creation uses the narrower `calendar.app.created` scope rather than
+permission to change properties of all calendars. Event access remains necessary
+for user-selected existing calendars, and read-only calendar-list access supports
+destination selection.
 
 Existing test accounts should reconnect with `/connect_google` to grant the
 additional calendar creation/list permissions. Configure these permissions in

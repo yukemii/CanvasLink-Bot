@@ -28,6 +28,11 @@ func botCommands() []tgbotapi.BotCommand {
 	}
 }
 
+// Public policy pages must be published before deploying bot links.
+const privacyURL = "https://site.dulie.app/canvaslink/privacy/"
+const termsURL = "https://site.dulie.app/canvaslink/terms/"
+const policyLinks = "Privacy: " + privacyURL + "\nTerms: " + termsURL
+
 const welcomeMessage = `🎓 Welcome to CanvasLink!
 
 Your Canvas deadlines, with a little less admin:
@@ -36,6 +41,10 @@ Your Canvas deadlines, with a little less admin:
 📅 Optionally sync to a separate CanvasLink Google Calendar.
 
 Mark work Done, snooze reminders, add personal tasks, or set an earlier personal target. Daily/weekly scheduled agendas are optional and start off. Quiet hours default to 22:00–08:00 in your timezone.
+
+Before sharing your feed, read how CanvasLink stores your data and how to delete it:
+` + policyLinks + `
+By continuing setup, you agree to the Terms of Service. Google access is optional and needs separate authorization.
 
 First, connect your Canvas calendar feed:
 1. Log into Canvas and open Calendar.
@@ -51,7 +60,9 @@ const returningMessage = `Welcome back! 👋
 /upcoming — Browse work, mark Done, snooze, or set a personal target
 /add — Add a personal task
 
-Use /settings to change sync modes, reminders, scheduled agendas, or calendar preferences anytime. /help lists every command.`
+Use /settings to change sync modes, reminders, scheduled agendas, or calendar preferences anytime. /help lists every command.
+
+` + policyLinks
 
 func helpMessage() string {
 	var b strings.Builder
@@ -76,5 +87,6 @@ Done stops reminders locally; Undo restores future reminders. It does not submit
 Feed checks are periodic (normally hourly). I’ll report repeated connection failures and recovery; an invalid Google authorization prompts reconnection. Deadline-change messages show the previous and new dates. /upcoming shows the last successful Canvas check.
 
 Change any course/type or notification preference anytime in /settings.`)
+	b.WriteString("\n\n" + policyLinks + "\nPrivacy or deletion help: dulie.business@gmail.com (mention CanvasLink).")
 	return b.String()
 }

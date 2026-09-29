@@ -1,0 +1,11 @@
+# Allowlist: credentials, website files, Git history, and deployment notes never enter the build context.
+**
+!Dockerfile
+!go.mod
+!go.sum
+!main.go
+!internal/
+!internal/**
+internal/**/.env*
+internal/**/*.pem
+internal/**/*.key

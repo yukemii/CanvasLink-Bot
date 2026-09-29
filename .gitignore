@@ -1,5 +1,8 @@
 # Environment variables
 .env
+.env.*
+!.env.example
+.local/
 
 # Compiled binary
 canvaslink.exe
@@ -16,3 +19,6 @@ Thumbs.db
 *.test
 *.out
 coverage.out
+
+# Python deployment helpers
+__pycache__/

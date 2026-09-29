@@ -1,0 +1,13 @@
+# Use the same narrow source set for a future Cloud Build submission.
+**
+!Dockerfile
+!.dockerignore
+!.gcloudignore
+!go.mod
+!go.sum
+!main.go
+!internal/
+!internal/**
+internal/**/.env*
+internal/**/*.pem
+internal/**/*.key

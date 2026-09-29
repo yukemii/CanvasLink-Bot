@@ -25,7 +25,7 @@ Alternatively, use GitHub Pages' **Deploy from a branch** source with `main` and
 
 ## Point the buttons to your live bot
 
-The main buttons currently open [@CanvasLink_bot](https://t.me/CanvasLink_bot). The footer also includes a direct Telegram link.
+CanvasLink is not yet deployed. The main buttons currently lead to the sample demo because `telegramUrl` is empty. The footer marks the Telegram bot link as not live yet. After verifying deployment, remove the pre-launch notice, finalize the policy pages, and configure the live link.
 
 Set `telegramUrl` in `config.js` to the public bot link:
 
@@ -52,3 +52,19 @@ If the repository is renamed or moved, update the GitHub links and absolute `og:
 The site supports keyboard navigation, visible focus indicators, native expandable FAQs, screen-reader status announcements, and reduced-motion preferences. The theme preference is stored locally in your browser. No analytics, cookies, or tracking scripts are included.
 
 When changing bot features, keep this page, `/start`, `/help`, and the repository README aligned as described in [AGENTS.md](../AGENTS.md). The site explains the one-day reminder default, optional scheduled agendas, separate sync settings, and local-only planner actions. Verify the matching backend release before publishing new feature claims.
+
+## Privacy, terms, and the Dulie domain
+
+CanvasLink's static policy pages are [`privacy/index.html`](privacy/index.html)
+and [`terms/index.html`](terms/index.html), styled by `legal.css` with the existing
+logo and light/dark theme. They use relative links and work at a domain root or
+under a path such as `/canvaslink/`. The homepage footer links to both policies
+and the support email. Bot welcome/help messages and the Google authorization
+prompt link to the prepared public policy addresses. Keep policy descriptions aligned with actual data use,
+Google scopes, and disconnect/reset behavior.
+
+See [the domain and Google setup guide](domain-setup.md) for reusing `dulie.app`,
+including an independent subdomain or publishing under Dulie's website. Confirm
+production hosting/retention details before public release; do not treat these
+pages as proof of Google approval. Publish the pages before deploying bot policy
+links, and update sharing metadata if the public website address changes.

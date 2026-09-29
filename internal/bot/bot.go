@@ -1474,6 +1474,7 @@ func (b *Bot) reply(chatID int64, text string) {
 }
 
 func (b *Bot) sendGoogleAuthButton(chatID int64, authURL, text string) {
+	text += "\n\nCanvasLink stores Google authorization for background sync, creates a dedicated calendar, and lists calendars so you can choose a destination. It manages tracked assignment events. Disconnecting Google keeps existing events.\n\nPrivacy: " + privacyURL
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(

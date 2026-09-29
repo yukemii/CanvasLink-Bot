@@ -1,5 +1,5 @@
-// Public Telegram bot link used by the main call-to-action buttons.
-// Set to an empty string to direct visitors to the interactive demo instead.
+// CanvasLink is not deployed yet. Keep launch buttons pointed at the sample demo.
+// Set the public Telegram URL only after verifying the deployed bot.
 window.CANVASLINK_CONFIG = {
-  telegramUrl: "https://t.me/CanvasLink_bot",
+  telegramUrl: "",
 };

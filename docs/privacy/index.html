@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f6f2" />
+    <meta
+      name="description"
+      content="How CanvasLink handles Canvas feeds, Telegram planner data, Google Calendar access, and deletion requests."
+    />
+    <title>Privacy Policy | CanvasLink</title>
+    <link rel="icon" href="../assets/logo.png" type="image/png" />
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../theme.css" />
+    <link rel="stylesheet" href="../legal.css" />
+  </head>
+  <body class="legal-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="../"
+        ><img
+          class="brand-icon"
+          src="../assets/logo.png"
+          alt=""
+          width="40"
+          height="40"
+        />Canvas<span class="brand-light">Link</span></a
+      >
+      <button
+        id="theme-toggle"
+        class="theme-toggle"
+        type="button"
+        aria-label="Dark mode"
+        aria-pressed="false"
+        hidden
+      >
+        <span class="theme-moon" aria-hidden="true">☾</span
+        ><span class="theme-sun" aria-hidden="true">☀</span>
+      </button>
+    </header>
+    <main id="main" class="legal-content wrap">
+      <nav class="legal-nav" aria-label="Policy navigation">
+        <a href="../">Home</a
+        ><a href="../privacy/" aria-current="page">Privacy Policy</a
+        ><a href="../terms/">Terms of Service</a>
+      </nav>
+      <p class="eyebrow">CANVASLINK</p>
+      <h1>Privacy Policy</h1>
+      <p class="legal-date">Last updated: 29 September 2026.</p>
+      <p class="launch-notice">
+        <strong>Pre-launch draft.</strong> CanvasLink is not yet deployed as a
+        public bot. These pages describe the current implementation and proposed
+        service terms. Production hosting and retention arrangements will be
+        finalized before public launch.
+      </p>
+
+      <section>
+        <h2>1. Who operates CanvasLink</h2>
+        <p>
+          CanvasLink is operated by Ke Mi in Singapore (“we”, “us”). For
+          privacy, support, access, correction, or deletion requests, email
+          <a href="mailto:dulie.business@gmail.com">dulie.business@gmail.com</a>
+          and mention CanvasLink. This policy covers the CanvasLink website and
+          Telegram bot; Dulie is a separate bot with its own policy.
+        </p>
+      </section>
+      <section>
+        <h2>2. Information we process</h2>
+        <ul>
+          <li>
+            <strong>Telegram:</strong> user and private-chat identifiers,
+            username, commands, and messages you send to the bot. We process
+            messages to carry out your requests; the application stores
+            structured records needed for its features, rather than a general
+            conversation transcript.
+          </li>
+          <li>
+            <strong>Canvas:</strong> your private calendar feed URL and the
+            calendar entries it returns, including titles, descriptions, course
+            identifiers, links, dates, and cancellation information. The feed
+            URL acts like a secret that grants access to the feed.
+          </li>
+          <li>
+            <strong>Planner and preferences:</strong> personal tasks, completion
+            status, personal targets, snoozes, timezone, course/type settings,
+            reminder and agenda preferences, and onboarding progress.
+          </li>
+          <li>
+            <strong>Google connection:</strong> access and refresh tokens,
+            permission scopes, expiry, calendar identifiers and properties,
+            calendar-list information used for destination selection, and
+            responses about events the bot manages.
+          </li>
+          <li>
+            <strong>Operations:</strong> pending actions, calendar jobs,
+            notification content and delivery records, connection health,
+            temporary authorization state, and error diagnostics. Support
+            correspondence and infrastructure access logs may contain additional
+            technical information such as IP addresses and request times.
+          </li>
+        </ul>
+        <p>
+          We do not ask for your Canvas or Google password. Google is optional.
+          The current integration requests no Gmail, Drive, Contacts, or Google
+          Tasks permissions.
+        </p>
+      </section>
+      <section>
+        <h2>3. Why we use information</h2>
+        <p>
+          We use this information to read your Canvas deadlines, show your
+          planner, apply settings, send reminders and optional agendas, notify
+          you of deadline or connection changes, and perform the Google Calendar
+          sync you enable. Background processing continues while your
+          connections and settings permit it. We also use necessary information
+          to handle support, maintain security, and meet legal obligations.
+        </p>
+        <p>
+          CanvasLink does not use AI models to interpret your messages or
+          process your calendar data. We do not sell personal information or use
+          it for targeted advertising.
+        </p>
+      </section>
+      <section>
+        <h2>4. Optional Google Calendar access</h2>
+        <p>
+          The authorization screen describes permissions whose technical reach
+          is broader than the events CanvasLink intends to manage:
+        </p>
+        <ul>
+          <li>
+            <code>https://www.googleapis.com/auth/calendar.events</code> lets
+            the app view and edit calendar events. CanvasLink creates, reads,
+            updates, and removes tracked events as needed for sync and verified
+            reset.
+          </li>
+          <li>
+            <code>https://www.googleapis.com/auth/calendar.app.created</code>
+            permits creation of secondary calendars and management of events on
+            calendars created by the app. CanvasLink uses this to provide a
+            dedicated CanvasLink calendar.
+          </li>
+          <li>
+            <code
+              >https://www.googleapis.com/auth/calendar.calendarlist.readonly</code
+            >
+            lets CanvasLink list your calendars so you can select a writable
+            destination.
+          </li>
+        </ul>
+        <p>
+          Relevant assignment titles, descriptions, links, dates, times, and
+          appearance settings are sent to Google. We keep event identifiers and
+          ownership records for subsequent updates, retries, and safe deletion.
+          The bot does not import your unrelated Google events into the Telegram
+          planner. Selecting a shared calendar may make synced details visible
+          to people who have access to that calendar.
+        </p>
+        <p>
+          Tokens allow authorized background sync without repeated sign-in. You
+          may use <code>/disconnect_google</code> and remove CanvasLink in
+          <a href="https://myaccount.google.com/connections"
+            >Google Account connections</a
+          >
+          to stop future authorized access. See the deletion section for what
+          remains.
+        </p>
+        <h3>Google data and Limited Use</h3>
+        <p>
+          CanvasLink’s use and transfer of information received from Google APIs
+          follows the
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            >Google API Services User Data Policy</a
+          >, including its Limited Use requirements. Google data is used only to
+          provide or improve the visible features you authorize, never for
+          advertising, sale, credit decisions, or training general-purpose AI
+          models.
+        </p>
+        <p>
+          Transfers of Google data are limited to authorized user-facing
+          features with your consent, security purposes, legal obligations, or a
+          business transfer with your prior explicit consent. Human access is
+          limited to your affirmative permission for specific data, necessary
+          security or legal purposes, or permitted aggregated internal
+          operations. These restrictions also cover derived data and people
+          acting on our behalf.
+        </p>
+      </section>
+      <section>
+        <h2>5. Services that receive information</h2>
+        <ul>
+          <li>
+            <strong>Telegram</strong> delivers your messages and receives bot
+            replies, deadline details, reminders, and agendas.
+          </li>
+          <li>
+            <strong>Your Canvas provider</strong> receives requests for the feed
+            you connect; the feed contents are processed by CanvasLink.
+          </li>
+          <li>
+            <strong>Google</strong> handles OAuth and the calendar operations
+            you authorize. The website also loads fonts from Google Fonts, which
+            receives the network information needed to serve those fonts.
+          </li>
+          <li>
+            <strong>Infrastructure providers</strong> serving the website, bot,
+            and PostgreSQL database process the information necessary to operate
+            those components. The repository’s website deployment uses GitHub
+            Pages. The database is hosted on Google Cloud SQL in Singapore.
+            Production bot hosting and log/backup retention arrangements have
+            not yet been finalized. We will update those details before launch.
+          </li>
+        </ul>
+        <p>
+          These services may process information outside Singapore. We handle
+          transfers under applicable data-protection requirements. Necessary
+          disclosures for security or legal obligations remain subject to the
+          stricter Google data limits above.
+        </p>
+      </section>
+      <section>
+        <h2>6. Storage, retention, and deletion</h2>
+        <p>
+          CanvasLink stores account, planner, connection, and operational
+          records in PostgreSQL. Feed URLs and Google credentials are encrypted
+          by the application before storage. This does not mean every task or
+          database field is encrypted by the application, or that the service
+          provides end-to-end encrypted storage.
+        </p>
+        <p>
+          Account data and planner history have no general automatic age-based
+          deletion. They remain until removed by the relevant feature or a
+          deletion request. The scheduler prunes notification-outbox records
+          whose expiry is more than 30 days in the past; this is not a 30-day
+          limit for all data. Expiry of an authorization or temporary input does
+          not necessarily mean immediate physical erasure.
+        </p>
+        <ul>
+          <li>
+            <strong>Done:</strong> marks work complete locally and stops its
+            reminders; it does not erase the item or submit work to Canvas.
+          </li>
+          <li>
+            <strong><code>/disconnect_canvas</code>:</strong> removes the feed,
+            course settings, and feed-backed planner items. Personal tasks,
+            preferences, existing Google events, and ownership records needed
+            for a later verified wipe remain.
+          </li>
+          <li>
+            <strong><code>/disconnect_google</code>:</strong> removes stored
+            Google authorization and attempts provider revocation. It retains
+            existing Google events and local planner data.
+          </li>
+          <li>
+            <strong><code>/reset</code>:</strong> after confirmation, attempts
+            to delete verified CanvasLink-owned Google events, then removes
+            local account and planner data. If verification or deletion fails,
+            reset can stop with local data retained. It does not promise to
+            delete the Google calendar itself.
+          </li>
+        </ul>
+        <p>
+          For local data deletion without a Google-event wipe, or if reset
+          cannot finish, email
+          <a href="mailto:dulie.business@gmail.com">dulie.business@gmail.com</a
+          >. Include your Telegram username or identifier; never send your
+          private feed URL, passwords, or OAuth tokens. We may verify account
+          ownership before acting. We will explain any information that must be
+          retained and consider logs and backups when handling the request. No
+          fixed backup-erasure period is promised here; applicable limits will
+          be explained in the response.
+        </p>
+        <p>
+          Blocking the bot or deleting the Telegram chat does not erase the
+          database or revoke Google access. Copies independently held by
+          Telegram, Google, or your institution are controlled through those
+          services. Revoke or regenerate a Canvas feed through your institution
+          if its URL has been exposed.
+        </p>
+      </section>
+      <section>
+        <h2>7. Your choices and privacy requests</h2>
+        <p>
+          Change reminder, agenda, sync, and timezone preferences in the bot.
+          You can use the planner without connecting Google, disconnect either
+          integration, or stop using the service. Contact the operator for
+          access, correction, a copy, deletion, or withdrawal of consent.
+          Depending on applicable law, you may also have rights to restrict or
+          object to processing and complain to a privacy regulator. We respond
+          within applicable legal requirements and explain lawful limitations.
+        </p>
+        <p>
+          We retain information only while needed for the disclosed service,
+          security, or legal purposes. Where a legal basis is required,
+          processing relies on providing the service you request, consent where
+          required, permitted service/security interests, or legal obligations.
+          Google data remains subject to the narrower limits above.
+        </p>
+      </section>
+      <section>
+        <h2>8. Website and security</h2>
+        <p>
+          The website stores your light/dark theme preference in browser local
+          storage. Its interactive previews use sample data and do not access
+          your accounts. It does not add analytics scripts, advertising
+          trackers, or application cookies. Hosting and font providers may
+          receive technical request information. External links lead to services
+          with their own policies.
+        </p>
+        <p>
+          The bot attempts to delete the Telegram message containing your feed
+          URL after you submit it; if that fails, it asks you to delete it. Do
+          not share the URL publicly. No online service can guarantee absolute
+          security. Contact us if you suspect unauthorized access.
+        </p>
+      </section>
+      <section>
+        <h2>9. Updates</h2>
+        <p>
+          We will update this policy when our practices change and provide
+          notice of material changes through the service where appropriate. New
+          uses requiring consent will be presented before that processing
+          begins. The date above identifies this version.
+        </p>
+      </section>
+    </main>
+    <footer class="wrap">
+      <div class="footer-links">
+        <a href="../">CanvasLink home</a><a href="../privacy/">Privacy</a
+        ><a href="../terms/">Terms</a
+        ><a href="mailto:dulie.business@gmail.com">Contact</a>
+      </div>
+      <p class="affiliation">
+        An independent project. Not affiliated with Instructure, Google, or
+        Telegram.
+      </p>
+    </footer>
+  </body>
+</html>

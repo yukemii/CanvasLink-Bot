@@ -397,3 +397,23 @@ func TestResetFailureDoesNotRevoke(t *testing.T) {
 		t.Fatal("provider revocation ran after local reset failed")
 	}
 }
+
+// The consent request must match the published privacy policy and must not
+// regain permission to modify properties of unrelated calendars.
+func TestGoogleScopesUseNarrowCalendarCreation(t *testing.T) {
+	server := NewServer(nil, "test-client", "test-secret", "http://localhost:9090/oauth/callback")
+	expected := map[string]bool{
+		"https://www.googleapis.com/auth/calendar.events":                true,
+		"https://www.googleapis.com/auth/calendar.app.created":           true,
+		"https://www.googleapis.com/auth/calendar.calendarlist.readonly": true,
+	}
+	for _, scope := range server.OAuthConfig().Scopes {
+		if !expected[scope] {
+			t.Fatalf("unexpected or duplicate OAuth scope %q", scope)
+		}
+		delete(expected, scope)
+	}
+	if len(expected) != 0 {
+		t.Fatalf("missing required Calendar scopes: %v", expected)
+	}
+}
