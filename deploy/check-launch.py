@@ -94,7 +94,8 @@ def main():
                         expected = config.get('CANVASLINK_SCHEDULER_AUDIENCE', '').rstrip('/') + '/telegram/webhook'
                         result(body['result'].get('url') == expected, 'Telegram webhook matches the deployment')
                     else:
-                        result(not body['result'].get('url'), 'Telegram webhook is absent, as required by polling mode')
+                        absent = not body['result'].get('url')
+                        result(absent, 'Telegram webhook is absent, as required by polling mode' if absent else 'Telegram webhook is active; stop cloud delivery before starting polling')
             except Exception:
                 # Exception strings can contain Telegram token-bearing request URLs.
                 result(False, 'Telegram ' + method + ' could not be verified (details withheld)')

@@ -1,8 +1,10 @@
 # CanvasLink on request-based Cloud Run
 
 Status: a small cloud pilot was authorized on 30 September 2026. The Cloud Run
-service is deployed; final health-route correction and activation checks are in
-progress. Public launch and Google verification remain pending. Existing Dulie
+service is deployed and activated. Public health/authentication checks passed,
+Telegram points to the cloud webhook, and authenticated scheduled runs returned
+HTTP 204. The Mac poller/proxy are stopped. Real-account tests, public launch,
+and Google verification remain pending. Existing Dulie
 services are not modified.
 
 ## Prepared deployment

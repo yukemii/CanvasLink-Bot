@@ -47,12 +47,12 @@
       </nav>
       <p class="eyebrow">CANVASLINK</p>
       <h1>Privacy Policy</h1>
-      <p class="legal-date">Last updated: 29 September 2026.</p>
+      <p class="legal-date">Last updated: 30 September 2026.</p>
       <p class="launch-notice">
-        <strong>Pre-launch draft.</strong> CanvasLink is not yet deployed as a
-        public bot. These pages describe the current implementation and proposed
-        service terms. Production hosting and retention arrangements will be
-        finalized before public launch.
+        <strong>Pre-launch draft.</strong> CanvasLink is in private testing and
+        has not been publicly launched. These pages describe the current
+        implementation and proposed service terms. Production hosting and
+        retention arrangements will be finalized before public launch.
       </p>
 
       <section>
@@ -208,9 +208,12 @@
             <strong>Infrastructure providers</strong> serving the website, bot,
             and PostgreSQL database process the information necessary to operate
             those components. The repository’s website deployment uses GitHub
-            Pages. The database is hosted on Google Cloud SQL in Singapore.
-            Production bot hosting and log/backup retention arrangements have
-            not yet been finalized. We will update those details before launch.
+            Pages. The pilot bot runs on Google Cloud Run, with Cloud Scheduler
+            triggering periodic checks, and its database is hosted on Google
+            Cloud SQL. These resources are configured in Singapore. The current
+            default application-log retention is 30 days. Database backup and
+            final production retention arrangements will be reviewed before
+            public launch.
           </li>
         </ul>
         <p>

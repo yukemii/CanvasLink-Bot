@@ -35,10 +35,10 @@ deployment and live Telegram button configuration.
 
 ## Privacy and production website
 
-**Pre-launch:** the bot has been started locally for testing but has not been
-deployed to a public host. The published website uses sample-demo
-buttons, and the policy pages are pre-launch drafts. Finalize production hosting
-and retention details before publishing them as the live service policies.
+**Private cloud pilot:** the bot is deployed on Cloud Run with Telegram webhooks
+and authenticated scheduled checks. The local poller is stopped. Real Canvas and
+Google account tests and Google verification remain pending. The website keeps
+its sample-demo buttons and pre-launch policy notices until public launch.
 
 CanvasLink has dedicated [Privacy Policy](docs/privacy/index.html) and
 [Terms of Service](docs/terms/index.html) pages, linked from the website footer, bot welcome/help messages, and Google

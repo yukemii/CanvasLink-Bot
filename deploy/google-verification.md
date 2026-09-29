@@ -1,9 +1,10 @@
 # CanvasLink Google OAuth preparation
 
 Status: Calendar API is enabled in the existing **CanvasLink** project
-`canvaslink-498509`. OAuth client credentials and consent settings have not been
-verified. The bot currently runs locally with Google Calendar disabled. Do not
-submit it as a fully deployed public service yet.
+`canvaslink-498509`. The private Cloud Run pilot has Google credentials configured,
+and the operator confirmed the public callback was saved. Real Google consent and
+calendar writes, branding/consent settings, and verification remain to be checked.
+Hosting alone does not mean Google has approved the app.
 
 ## Console values
 
@@ -29,6 +30,18 @@ access; do not pick an unrelated address or claim it is configured already.
 The site and policy pages are explicitly pre-launch. Finalize the hosting,
 retention, backups, and live-account checks before removing those notices or
 submitting the production verification request.
+
+## Private cloud pilot callback
+
+The Web client must include exactly:
+
+```text
+https://canvaslink-4523246116.asia-southeast1.run.app/oauth/callback
+```
+
+The operator confirmed this was saved on 30 September 2026. Keep the Google
+account used for testing in Audience → Test users if the consent app is in Testing.
+The callback is served by Cloud Run; the homepage and policies remain on Pages.
 
 ## Local test client
 

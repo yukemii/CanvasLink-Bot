@@ -16,7 +16,8 @@ The application role has no superuser, database-creation, role-creation, or RLS
 bypass privileges and no inherited role memberships. Transactional DDL/read/write
 and session advisory-lock checks passed. A metadata-only audit found no table
 access or public-schema creation privilege for this role in Dulie's database.
-The application initialized 14 `canvaslink_` tables. The complete Go test suite
+The application initially created 14 `canvaslink_` tables; the webhook migration
+added a receipts table, for 15 tables as of 30 September 2026. The complete Go test suite
 passed with PostgreSQL integration tests enabled; no temporary test schemas
 remained afterward. The temporary setup administrator was removed. Dulie's database, credentials,
 and instance network settings were unchanged.
@@ -38,11 +39,12 @@ Use `gcloud auth login` if the current account is no longer authenticated. Do no
 start a second proxy on the same port. The `.env` URL connects to the local proxy,
 not directly to a public database endpoint. Keep `.env` and its encryption key
 backed up securely. The Telegram token has been supplied and verified for
-`@CanvasLink_bot`; Google OAuth credentials remain missing. The bot has been
-started locally for testing using `python3 deploy/run-local.py`, which manages
-its own proxy. Do not start the standalone proxy at the same time. Always-on
-hosting will need its own connection and secret configuration rather than relying
-on this laptop's user login.
+`@CanvasLink_bot`; Google credentials are also configured. The bot now runs on
+Cloud Run through a managed Cloud SQL Unix socket and dedicated service account.
+The local polling bot and proxy are stopped. `deploy/run-local.py` remains a
+rollback/testing option and refuses to start while a webhook is active. Do not
+start a standalone proxy on the same port as the launcher. See the
+[Cloud Run runbook](cloud-run.md) before changing runtime mode.
 
 ## Cloud SQL access
 

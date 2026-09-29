@@ -33,11 +33,14 @@ def main():
         if not shutil.which(executable):
             print('Missing required tool: ' + executable)
             return 1
-    check = subprocess.run([sys.executable, str(ROOT / 'deploy/check-launch.py'), '--local'])
+    check = subprocess.run([sys.executable, str(ROOT / 'deploy/check-launch.py'), '--local', '--check-telegram'])
     if check.returncode:
         return check.returncode
     config = dict(line.split('=', 1) for line in (ROOT / '.env').read_text().splitlines()
                   if line and not line.startswith('#') and '=' in line)
+    if config.get('CANVASLINK_RUNTIME_MODE', 'polling') != 'polling':
+        print('The local launcher requires polling mode; use the Cloud Run runbook for webhook mode.')
+        return 1
     url = urllib.parse.urlsplit(config['CANVASLINK_DATABASE_URL'])
     if (url.hostname, url.port, url.path, url.username) != ('127.0.0.1', 15432, '/canvaslink', 'canvaslink_app'):
         print('This local launcher expects the prepared CanvasLink loopback database URL.')

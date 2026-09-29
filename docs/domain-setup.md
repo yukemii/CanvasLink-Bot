@@ -1,8 +1,9 @@
 # CanvasLink website and Google verification
 
 **Status:** the pre-launch website is published at https://site.dulie.app/canvaslink/.
-The bot has been started locally for testing, not deployed to an always-on host.
-Policies remain drafts until production arrangements are finalized.
+The bot now runs as a private Cloud Run pilot with webhooks and scheduled checks.
+Real account testing and Google verification remain pending; policies retain
+pre-launch notices until production arrangements are finalized.
 
 The existing `dulie.app` registration can support CanvasLink as well as Dulie.
 Creating `canvaslink.dulie.app` does not require buying another domain. DNS
@@ -95,11 +96,12 @@ site metadata, bot links, and redirects from the old addresses.
    domain verification can be reused if the account/project relationship is
    correct. Keep the verification DNS record. Google Search Console verification
    and GitHub Pages domain verification are separate.
-5. Configure the actual backend OAuth redirect URI separately. GitHub Pages only
-   hosts static files and cannot handle `/oauth/callback`. For example, once
-   configured to point at the bot server, a separate hostname could serve
-   `https://canvaslink-api.dulie.app/oauth/callback`. Match that URI exactly in
-   Google and `CANVASLINK_OAUTH_REDIRECT_URL`. Do not point it at Pages.
+5. The private pilot uses the backend callback
+   `https://canvaslink-4523246116.asia-southeast1.run.app/oauth/callback`;
+   the operator confirmed it is saved in the CanvasLink Web client. GitHub Pages
+   only hosts static files and cannot handle this callback. If a custom callback
+   hostname is adopted later, configure DNS/TLS and update Google and the runtime
+   to the same exact URI before switching. Do not point the callback at Pages.
 6. Declare the three scopes in the README and review whether each is the narrowest
    scope needed. Complete brand verification/publication and sensitive-scope review
    with the working app, scope justifications, and an end-to-end demonstration.

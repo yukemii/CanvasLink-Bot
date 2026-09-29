@@ -25,7 +25,7 @@ Alternatively, use GitHub Pages' **Deploy from a branch** source with `main` and
 
 ## Point the buttons to your live bot
 
-CanvasLink is not yet deployed. The main buttons currently lead to the sample demo because `telegramUrl` is empty. The footer marks the Telegram bot link as not live yet. After verifying deployment, remove the pre-launch notice, finalize the policy pages, and configure the live link.
+CanvasLink is deployed as a private Cloud Run pilot. The main buttons still lead to the sample demo because `telegramUrl` is empty; the footer labels the bot as a private pilot. After real-account testing and Google verification, finalize the policies, remove the pre-launch notice, and configure the public live link.
 
 Set `telegramUrl` in `config.js` to the public bot link:
 
