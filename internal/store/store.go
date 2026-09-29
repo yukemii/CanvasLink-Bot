@@ -145,6 +145,7 @@ func (s *Store) InitSchema(ctx context.Context) error {
 		canvaslinkCalendarJobsTable,
 		canvaslinkDestructiveConfirmationsTable,
 		plannerSchema,
+		runtimeSchema,
 	}
 
 	for i, q := range statements {

@@ -4,6 +4,26 @@ CanvasLink is a standalone Telegram bot for Canvas deadlines, personalized remin
 
 It was extracted from the [Dulie](https://github.com/markadodo/dulie) scheduling assistant codebase into its own independent project. CanvasLink is now fully self-contained with its own Google OAuth flow, database tables, and no runtime dependencies on Dulie.
 
+## Cloud Run deployment
+
+Webhook mode supports request-based Cloud Run with zero minimum instances. Telegram
+sends messages to an authenticated webhook; one Google Cloud Scheduler job calls
+an OIDC-protected endpoint every minute for reminders, due Canvas checks (normally
+hourly), and queued Google writes. Work finishes inside requests; it does not rely
+on CPU after a response. Local polling remains supported.
+
+See the [Cloud Run runbook](deploy/cloud-run.md) and [launch status](deploy/launch-status.md).
+Run `python3 deploy/cloud-run.py` to prepare a private local configuration and view
+the plan. This creates no cloud resources. Deployment is metered and requires
+explicit cost authorization; free allowances are not a guaranteed $0 cap.
+
+Telegram update IDs are retained for seven days to suppress retries, without
+storing message bodies. Commands are reserved before execution: a crash during a
+command can require the user to repeat it, rather than automatically repeating a
+potentially destructive or non-idempotent action. Acknowledged reminder deliveries
+remain protected by database state and per-user locks; Telegram's send/ack crash
+window can still produce a duplicate notification, as described below.
+
 ## Landing page
 
 The student-facing landing page lives in [`docs/`](docs/README.md). It includes an
@@ -16,7 +36,7 @@ deployment and live Telegram button configuration.
 ## Privacy and production website
 
 **Pre-launch:** the bot has been started locally for testing but has not been
-deployed to an always-on host. The published website uses sample-demo
+deployed to a public host. The published website uses sample-demo
 buttons, and the policy pages are pre-launch drafts. Finalize production hosting
 and retention details before publishing them as the live service policies.
 
@@ -115,7 +135,11 @@ All CanvasLink tables use the `canvaslink_` prefix and are auto-created on start
 | `CANVASLINK_DEFAULT_TIMEZONE` | No | IANA timezone for new users (default: `Asia/Singapore`) |
 | `CANVASLINK_REMOVAL_MISSES` | No | Successful feeds an event must be absent from before removal (default: `3`) |
 | `CANVASLINK_REMOVAL_GRACE_PERIOD` | No | Minimum absence time before removal (default: `6h`) |
-| `CANVASLINK_CALENDAR_JOB_INTERVAL` | No | Durable calendar-job retry interval (default: `15s`) |
+| `CANVASLINK_CALENDAR_JOB_INTERVAL` | No | Polling-mode calendar-job retry interval (default: `15s`); webhook mode processes jobs on each scheduled tick |
+| `CANVASLINK_RUNTIME_MODE` | No | `polling` (local default) or `webhook` (Cloud Run) |
+| `CANVASLINK_WEBHOOK_SECRET` | Webhook | Independent random 32–256 character Telegram header secret |
+| `CANVASLINK_SCHEDULER_AUDIENCE` | Webhook | Public HTTPS service URL expected in scheduler OIDC tokens |
+| `CANVASLINK_SCHEDULER_EMAIL` | Webhook | Exact Google service account allowed to trigger scheduled work |
 | `CANVASLINK_ALLOW_INSECURE_FEEDS` | No | Development override permitting HTTP feeds (default: `false`) |
 | `CANVASLINK_ALLOW_PRIVATE_FEEDS` | No | Development override permitting private-network feeds (default: `false`) |
 | `CANVASLINK_COURSE_REGEX` | No | Custom course-code detection regex |
@@ -326,7 +350,7 @@ All these features are also accessible from `/settings`.
   Equal start/end hours disable quiet hours.
 - Timed reminders use elapsed offsets. All-day offsets count back from 09:00 on
   the local due date; whole-day offsets preserve that wall time across DST changes.
-- The scheduler runs every minute. After downtime or late discovery, only the
+- Reminder checks normally run every minute (an external scheduled request in webhook mode). Cold starts, overlapping cycles, and retries can delay delivery. After downtime or late discovery, only the
   most recently elapsed offset is caught up, and only before the target/deadline.
   It does not send a burst for every missed offset.
 - **Done** is local to CanvasLink, stops reminders, and can be undone. It does not

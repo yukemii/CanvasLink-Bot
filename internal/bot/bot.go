@@ -104,20 +104,34 @@ func (b *Bot) Start(ctx context.Context) error {
 				}
 				return errors.New("telegram updates channel closed")
 			}
-			if update.CallbackQuery != nil {
-				b.handleCallback(ctx, update.CallbackQuery)
-				continue
-			}
-			if update.Message == nil || update.Message.From == nil {
-				continue
-			}
-			b.handleMessage(ctx, update.Message)
+			b.HandleUpdate(ctx, update)
 		case userID := <-b.oauthNotifyCh:
 			// A user completed Google OAuth — start course setup if they're in onboarding
 			b.handleOAuthComplete(ctx, userID)
 		}
 	}
 }
+
+// HandleUpdate completes work before the HTTP response in webhook mode.
+func (b *Bot) HandleUpdate(ctx context.Context, update tgbotapi.Update) {
+	if update.CallbackQuery != nil {
+		b.handleCallback(ctx, update.CallbackQuery)
+		return
+	}
+	if update.Message != nil && update.Message.From != nil {
+		b.handleMessage(ctx, update.Message)
+	}
+}
+
+func (b *Bot) PrepareWebhook() error {
+	// Long polling needs 70 seconds; webhook replies need only a short send timeout.
+	b.api.Client = telegramHTTP.NewClient(b.api.Token, 15*time.Second)
+	return b.registerCommands()
+}
+
+// CompleteOAuth is synchronous: request-based hosting cannot rely on a channel
+// consumer continuing to run after the callback response has been sent.
+func (b *Bot) CompleteOAuth(ctx context.Context, userID int64) { b.handleOAuthComplete(ctx, userID) }
 
 // NotifyOAuthComplete is called by the OAuth callback handler when a user
 // successfully connects Google Calendar during onboarding.

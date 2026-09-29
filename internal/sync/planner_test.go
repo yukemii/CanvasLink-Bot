@@ -127,3 +127,62 @@ func TestReminderDeliveryCurrent(t *testing.T) {
 		t.Fatal("removed offset still sends")
 	}
 }
+
+// Scheduled requests may be delivered twice or overlap during a rolling update.
+// Acknowledged reminders must remain single-delivery across worker instances.
+func TestScheduledRequestsDeliverOnceAndSkipOverlap(t *testing.T) {
+	s := testsupport.Store(t)
+	ctx := context.Background()
+	user := int64(793)
+	if err := s.UpsertTelegramAccountWithTimezone(ctx, user, user, "test", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+	prefs := store.DefaultPlannerPreferences()
+	prefs.QuietStart = 0
+	prefs.QuietEnd = 0
+	if err := s.SavePlannerPreferences(ctx, user, prefs); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddManualTask(ctx, user, "Scheduled reminder", time.Now().Add(20*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	var sent atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "getMe") {
+			fmt.Fprint(w, `{"ok":true,"result":{"id":1,"is_bot":true,"first_name":"Test"}}`)
+			return
+		}
+		sent.Add(1)
+		fmt.Fprint(w, `{"ok":true,"result":{"message_id":1,"chat":{"id":793,"type":"private"}}}`)
+	}))
+	defer server.Close()
+	api, err := tgbotapi.NewBotAPIWithClient("test", server.URL+"/bot%s/%s", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	release, ok, err := s.TryRuntimeLock(ctx, "scheduled")
+	if err != nil || !ok {
+		t.Fatal("lock failed")
+	}
+	worker := &Worker{store: s, api: api, workerID: "scheduled-test", interval: time.Hour}
+	if err := worker.RunScheduled(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if sent.Load() != 0 {
+		t.Fatal("overlap was not skipped")
+	}
+	if err := release(); err != nil {
+		t.Fatal(err)
+	}
+	if err := worker.RunScheduled(ctx); err != nil {
+		t.Fatal(err)
+	}
+	restarted := &Worker{store: s, api: api, workerID: "scheduled-restart", interval: time.Hour}
+	if err := restarted.RunScheduled(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if sent.Load() != 1 {
+		t.Fatalf("delivery count=%d", sent.Load())
+	}
+}

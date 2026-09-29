@@ -30,12 +30,14 @@ func (w *Worker) recordPlannerSnapshot(ctx context.Context, user int64, events m
 	}
 	return w.store.RecordPlannerSnapshot(ctx, user, tasks, planner.Location(account.Timezone))
 }
-func (w *Worker) runPlanner(ctx context.Context) {
+func (w *Worker) runPlanner(ctx context.Context) { w.runPlannerCycle(ctx, true) }
+
+func (w *Worker) runPlannerCycle(ctx context.Context, initialFeeds bool) {
 	if err := w.store.PrunePlannerDeliveries(ctx); err != nil {
 		log.Printf("prune planner deliveries: %v", err)
 	}
 	// New students get their first result within a minute, not a full sync interval.
-	if feeds, err := w.store.ListEnabledFeeds(ctx); err == nil {
+	if feeds, err := w.store.ListEnabledFeeds(ctx); initialFeeds && err == nil {
 		for _, feed := range feeds {
 			if feed.LastSyncedAt == nil {
 				w.syncFeed(ctx, feed)

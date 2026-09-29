@@ -84,7 +84,7 @@ Auto adds items silently; Active asks before adding; Ignore skips them. These mo
 Done stops reminders locally; Undo restores future reminders. It does not submit work to Canvas or remove Google events. Snooze pauses for 1 hour. Personal targets change reminder timing, not official deadlines. Personal tasks stay in Telegram.
 
 📡 Staying connected
-Feed checks are periodic (normally hourly). I’ll report repeated connection failures and recovery; an invalid Google authorization prompts reconnection. Deadline-change messages show the previous and new dates. /upcoming shows the last successful Canvas check.
+Feed checks are periodic (normally hourly). Reminder checks normally run each minute; delivery can be delayed by downtime or retries. I’ll report repeated connection failures and recovery; an invalid Google authorization prompts reconnection. Deadline-change messages show the previous and new dates. /upcoming shows the last successful Canvas check.
 
 Change any course/type or notification preference anytime in /settings.`)
 	b.WriteString("\n\n" + policyLinks + "\nPrivacy or deletion help: dulie.business@gmail.com (mention CanvasLink).")

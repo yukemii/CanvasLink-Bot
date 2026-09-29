@@ -38,8 +38,14 @@ Register exactly `http://localhost:9090/oauth/callback` as an authorized redirec
 No authorized JavaScript origin is needed for this server-side OAuth flow.
 
 Keep the audience in **Testing** and add the Google account(s) used for the test.
-Download the client JSON privately and provide its local path to the setup agent.
-Do not paste client secrets in chat or place downloads under `docs/` or Git.
+Store the client ID and full client secret privately in `.env` as
+`CANVASLINK_GOOGLE_CLIENT_ID` and `CANVASLINK_GOOGLE_CLIENT_SECRET`.
+JSON is not required. Google only displays a secret when it is created. If the
+existing secret is masked and its full value was not saved, select **Add Secret**
+on the client's details page and save the new value immediately. Keep the old
+secret enabled until the replacement has been tested.
+Do not paste client secrets in chat or place them under `docs/` or Git.
+See [Google's client-secret guidance](https://support.google.com/cloud/answer/15549257?hl=en#client-secret-hashing).
 Google's Testing-mode Calendar refresh tokens expire after seven days; this is a
 test limitation, not evidence of a bot persistence bug.
 

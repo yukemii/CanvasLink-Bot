@@ -223,6 +223,12 @@
       <section>
         <h2>6. Storage, retention, and deletion</h2>
         <p>
+          When webhook delivery is enabled, Telegram update IDs and receipt
+          times are stored to prevent repeated commands. They contain no message
+          body and are removed after seven days by the next successful scheduled
+          cleanup.
+        </p>
+        <p>
           CanvasLink stores account, planner, connection, and operational
           records in PostgreSQL. Feed URLs and Google credentials are encrypted
           by the application before storage. This does not mean every task or

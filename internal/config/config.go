@@ -16,6 +16,10 @@ import (
 )
 
 type Config struct {
+	RuntimeMode         string
+	WebhookSecret       string
+	SchedulerAudience   string
+	SchedulerEmail      string
 	TelegramBotToken    string
 	DatabaseURL         string
 	SyncInterval        time.Duration
@@ -43,6 +47,10 @@ func Load() (Config, error) {
 	_ = godotenv.Load("internal/.env")
 
 	cfg := Config{
+		RuntimeMode:         getEnv("CANVASLINK_RUNTIME_MODE", "polling"),
+		WebhookSecret:       os.Getenv("CANVASLINK_WEBHOOK_SECRET"),
+		SchedulerAudience:   os.Getenv("CANVASLINK_SCHEDULER_AUDIENCE"),
+		SchedulerEmail:      os.Getenv("CANVASLINK_SCHEDULER_EMAIL"),
 		TelegramBotToken:    os.Getenv("CANVASLINK_TELEGRAM_BOT_TOKEN"),
 		DatabaseURL:         os.Getenv("CANVASLINK_DATABASE_URL"),
 		SyncInterval:        parseDurationEnv("CANVASLINK_SYNC_INTERVAL", time.Hour),
@@ -67,6 +75,13 @@ func Load() (Config, error) {
 	cfg.DefaultTimezone = strings.TrimSpace(cfg.DefaultTimezone)
 	cfg.InstanceID = strings.TrimSpace(cfg.InstanceID)
 	cfg.EncryptionKeyID = strings.TrimSpace(cfg.EncryptionKeyID)
+
+	if port := os.Getenv("PORT"); port != "" {
+		cfg.OAuthListenAddr = ":" + port
+	}
+	if err := validateRuntime(cfg); err != nil {
+		return Config{}, err
+	}
 
 	var err error
 	cfg.AllowInsecureFeeds, err = parseBoolEnv("CANVASLINK_ALLOW_INSECURE_FEEDS", false)
@@ -262,4 +277,37 @@ func parsePreviousEncryptionKeys(raw, primaryKeyID string) (map[string][]byte, e
 		result[keyID] = decoded
 	}
 	return result, nil
+}
+
+func validateRuntime(cfg Config) error {
+	if cfg.RuntimeMode != "polling" && cfg.RuntimeMode != "webhook" {
+		return errors.New("CANVASLINK_RUNTIME_MODE must be polling or webhook")
+	}
+	if cfg.RuntimeMode == "polling" {
+		return nil
+	}
+	if len(cfg.WebhookSecret) < 32 || len(cfg.WebhookSecret) > 256 {
+		return errors.New("CANVASLINK_WEBHOOK_SECRET must contain 32-256 random letters, digits, underscores or hyphens")
+	}
+	for _, c := range cfg.WebhookSecret {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return errors.New("invalid webhook secret character")
+		}
+	}
+	u, err := url.Parse(cfg.SchedulerAudience)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return errors.New("CANVASLINK_SCHEDULER_AUDIENCE must be the public HTTPS service URL")
+	}
+	if !strings.HasSuffix(cfg.SchedulerEmail, ".iam.gserviceaccount.com") || strings.ContainsAny(cfg.SchedulerEmail, " \r\n") {
+		return errors.New("CANVASLINK_SCHEDULER_EMAIL must identify the scheduler service account")
+	}
+	if strings.HasPrefix(cfg.OAuthRedirectURL, "https://") == false {
+		return errors.New("webhook mode requires a public HTTPS OAuth redirect")
+	}
+	for _, path := range []string{"/telegram/webhook", "/internal/tick", "/health"} {
+		if u, err := url.Parse(cfg.OAuthRedirectURL); err == nil && u.Path == path {
+			return errors.New("OAuth callback conflicts with a runtime endpoint")
+		}
+	}
+	return nil
 }

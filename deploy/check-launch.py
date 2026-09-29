@@ -22,15 +22,24 @@ def main():
         print('BLOCKED: private environment file is missing.')
         return 1
     config = {}
-    for raw in args.env_file.read_text().splitlines():
-        line = raw.strip()
-        if not line or line.startswith('#'):
-            continue
-        if '=' not in line:
-            print('BLOCKED: invalid environment-file line (contents withheld).')
+    if args.env_file.suffix == '.json':
+        try:
+            config = json.loads(args.env_file.read_text())
+            if not isinstance(config, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in config.items()):
+                raise ValueError()
+        except (ValueError, TypeError):
+            print('BLOCKED: invalid environment JSON (contents withheld).')
             return 1
-        key, value = line.split('=', 1)
-        config[key.strip()] = value.strip().strip('\"\'')
+    else:
+        for raw in args.env_file.read_text().splitlines():
+            line = raw.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' not in line:
+                print('BLOCKED: invalid environment-file line (contents withheld).')
+                return 1
+            key, value = line.split('=', 1)
+            config[key.strip()] = value.strip().strip('"\'')
     problems = 0
 
     def result(ok, message):
@@ -47,6 +56,13 @@ def main():
         result(len(key) == 32, 'encryption key is 32 bytes')
     except (ValueError, TypeError):
         result(False, 'encryption key format is invalid')
+    mode = config.get('CANVASLINK_RUNTIME_MODE', 'polling')
+    result(mode in ('polling', 'webhook'), 'runtime mode is valid')
+    if mode == 'webhook':
+        secret = config.get('CANVASLINK_WEBHOOK_SECRET', '')
+        result(32 <= len(secret) <= 256 and all(c.isascii() and (c.isalnum() or c in '_-') for c in secret), 'webhook secret is configured')
+        result(config.get('CANVASLINK_SCHEDULER_AUDIENCE', '').startswith('https://'), 'scheduler HTTPS audience is configured')
+        result(config.get('CANVASLINK_SCHEDULER_EMAIL', '').endswith('.iam.gserviceaccount.com'), 'scheduler identity is configured')
     google_id = bool(config.get('CANVASLINK_GOOGLE_CLIENT_ID'))
     google_secret = bool(config.get('CANVASLINK_GOOGLE_CLIENT_SECRET'))
     result(google_id == google_secret, 'Google client ID and secret are both set or both absent')
@@ -74,7 +90,11 @@ def main():
                     username = body['result'].get('username', '')
                     result(username.lower() == 'canvaslink_bot', 'Telegram token belongs to @CanvasLink_bot')
                 else:
-                    result(not body['result'].get('url'), 'Telegram webhook is absent, as required by polling mode')
+                    if mode == 'webhook':
+                        expected = config.get('CANVASLINK_SCHEDULER_AUDIENCE', '').rstrip('/') + '/telegram/webhook'
+                        result(body['result'].get('url') == expected, 'Telegram webhook matches the deployment')
+                    else:
+                        result(not body['result'].get('url'), 'Telegram webhook is absent, as required by polling mode')
             except Exception:
                 # Exception strings can contain Telegram token-bearing request URLs.
                 result(False, 'Telegram ' + method + ' could not be verified (details withheld)')

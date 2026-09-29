@@ -2,7 +2,7 @@
 
 ## Completed
 
-- Cloud SQL database `canvaslink`, restricted login `canvaslink_app`, and 14 tables
+- Cloud SQL database `canvaslink`, restricted login `canvaslink_app`, and the original 14 tables
   on the existing `dulie-assistant:asia-southeast1:dulie-db` instance.
 - Private `.env` credentials, distinct application encryption key, and verified
   Telegram token for `@CanvasLink_bot` (no webhook configured).
@@ -16,6 +16,16 @@
   (commit `dcbb036`); all three URLs verified with HTTP 200.
 - Scope minimized from `calendar.calendars` to `calendar.app.created` for creating
   the dedicated calendar; existing-calendar event and calendar-list access retained.
+
+## Webhook implementation prepared
+
+- Authenticated Telegram and OIDC Scheduler endpoints; no timer/polling loops in
+  webhook mode, synchronous Google OAuth completion.
+- PostgreSQL update receipts, scheduler overlap lock, and persistent feed cadence.
+- Unit and PostgreSQL integration/race tests passed, including retry and overlap
+  behavior. Additive schema creates a receipts table and feed-attempt timestamp.
+- Private Cloud Run environment and deployment plan generated in ignored `.local/`.
+  No deployment/activation has been performed.
 
 ## Run locally without adding a hosting service
 
@@ -40,16 +50,15 @@ it never prints credential values, sends messages, or starts polling.
 
 ## Remaining inputs and public-launch work
 
-1. Download CanvasLink's **Web application** OAuth client JSON and provide its
-   local file path. The [Google setup guide](google-verification.md) gives the
-   exact test callback, consent links, scope reasons, and demonstration checklist.
+1. Google Web client credentials are saved privately and local configuration checks
+   pass. Live Google account consent and calendar-write tests are still pending.
 2. Complete live Canvas-feed, reminder, restart, and Google account tests using
    accounts/feed data the operator is authorized to use.
-3. Choose an always-on host within the user's **$0 additional hosting** constraint.
-   No new paid service has been created. Existing Dulie services run on Cloud Run,
-   not a shared VM available for an additional process. CanvasLink's background
-   polling needs continuous CPU, so ordinary request-based scale-to-zero hosting
-   is not sufficient. A separate always-on Cloud Run service is not guaranteed free.
+3. Webhook mode and authenticated scheduled checks are implemented. The
+   [Cloud Run setup](cloud-run.md) prepares a separate scale-to-zero service in
+   Dulie's project, sharing only the existing database instance. The user authorized a small metered pilot after reviewing the original $0
+   constraint. A S$5/month labelled-resource alert is configured (not a hard cap);
+   build/deployment verification is in progress.
 4. Set up the stable public HTTPS OAuth callback, with query-string logging omitted.
 5. Review backups: the shared instance reports automated backups disabled. Do not
    change Dulie's shared retention/cost settings without an agreed plan. Finalize
@@ -73,7 +82,8 @@ The Linux static binary has been cross-compiled. A Docker engine is not installe
 on this computer, so the image itself has not been built or run here. Do not
 promote it without a container smoke test.
 
-Cloud Run would additionally need instance-based billing, minimum one instance,
-and safe handling of overlapping revisions/instances. Maximum-instance settings
-alone are not a distributed polling lock. No Cloud Run deployment command is
-provided until those lifecycle requirements and hosting cost are resolved.
+Cloud Run can now use request-based billing with zero minimum instances through
+webhook mode. Database locks protect overlap, and scheduled requests execute
+background work before responding. See the [runbook](cloud-run.md) for preparation,
+activation, limitations, and rollback. Container build/cloud smoke tests remain
+pending until metered deployment is authorized.

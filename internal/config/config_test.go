@@ -153,3 +153,22 @@ func TestIsValidIdentifier(t *testing.T) {
 		}
 	}
 }
+
+func TestWebhookRuntimeValidation(t *testing.T) {
+	base := Config{RuntimeMode: "webhook", WebhookSecret: strings.Repeat("x", 32), SchedulerAudience: "https://canvaslink.example", SchedulerEmail: "scheduler@project.iam.gserviceaccount.com", OAuthRedirectURL: "https://canvaslink.example/oauth/callback"}
+	if err := validateRuntime(base); err != nil {
+		t.Fatal(err)
+	}
+	for _, change := range []func(*Config){
+		func(c *Config) { c.RuntimeMode = "unknown" }, func(c *Config) { c.WebhookSecret = "short" },
+		func(c *Config) { c.WebhookSecret = strings.Repeat("!", 32) }, func(c *Config) { c.SchedulerAudience = "http://example.com" },
+		func(c *Config) { c.SchedulerEmail = "person@example.com" }, func(c *Config) { c.OAuthRedirectURL = "http://localhost:9090/oauth/callback" },
+		func(c *Config) { c.OAuthRedirectURL = "https://canvaslink.example/internal/tick" },
+	} {
+		c := base
+		change(&c)
+		if err := validateRuntime(c); err == nil {
+			t.Fatal("invalid webhook runtime accepted")
+		}
+	}
+}

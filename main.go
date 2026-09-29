@@ -16,6 +16,7 @@ import (
 	"github.com/markadodo/canvaslink/internal/config"
 	canvasGoogle "github.com/markadodo/canvaslink/internal/google"
 	"github.com/markadodo/canvaslink/internal/oauth"
+	"github.com/markadodo/canvaslink/internal/runtimehttp"
 	"github.com/markadodo/canvaslink/internal/store"
 	canvasSync "github.com/markadodo/canvaslink/internal/sync"
 )
@@ -72,7 +73,18 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	oauthServer.SetOnOAuthComplete(tgBot.NotifyOAuthComplete)
+	if cfg.RuntimeMode == "webhook" {
+		oauthServer.SetOnOAuthComplete(func(user int64) {
+			notifyCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+			tgBot.CompleteOAuth(notifyCtx, user)
+		})
+		if err := tgBot.PrepareWebhook(); err != nil {
+			return fmt.Errorf("register Telegram commands: %w", err)
+		}
+	} else {
+		oauthServer.SetOnOAuthComplete(tgBot.NotifyOAuthComplete)
+	}
 
 	worker, err := canvasSync.NewWorkerWithOptions(
 		db,
@@ -91,36 +103,38 @@ func run() error {
 
 	mux := http.NewServeMux()
 	oauthServer.RegisterHTTPHandlers(mux, cfg.OAuthCallbackPath)
+	if cfg.RuntimeMode == "webhook" {
+		runtime, err := runtimehttp.New(db, tgBot.HandleUpdate, worker.RunScheduled, runtimehttp.Options{WebhookSecret: cfg.WebhookSecret, SchedulerAudience: cfg.SchedulerAudience, SchedulerEmail: cfg.SchedulerEmail})
+		if err != nil {
+			return err
+		}
+		runtime.Register(mux)
+	}
 	oauthServerHTTP := &http.Server{
 		Addr:              cfg.OAuthListenAddr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      35 * time.Second,
+		WriteTimeout:      290 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    16 << 10,
 	}
 
 	serverErrCh := make(chan error, 1)
 	go func() {
-		log.Printf("OAuth callback server listening on %s", cfg.OAuthListenAddr)
+		log.Printf("CanvasLink HTTP server listening on %s (mode=%s)", cfg.OAuthListenAddr, cfg.RuntimeMode)
 		if err := oauthServerHTTP.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			serverErrCh <- err
 		}
 	}()
 
 	var background sync.WaitGroup
-	background.Add(2)
-	go func() {
-		defer background.Done()
-		worker.Start(ctx)
-	}()
-
 	botErrCh := make(chan error, 1)
-	go func() {
-		defer background.Done()
-		botErrCh <- tgBot.Start(ctx)
-	}()
+	if cfg.RuntimeMode == "polling" {
+		background.Add(2)
+		go func() { defer background.Done(); worker.Start(ctx) }()
+		go func() { defer background.Done(); botErrCh <- tgBot.Start(ctx) }()
+	}
 
 	var runErr error
 	select {
